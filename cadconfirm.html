@@ -456,7 +456,7 @@
     document.getElementById('displayMelting').textContent = json.melting || 'Melting N/A';
     document.getElementById('displayCompany').textContent = json.companyName || 'Company N/A';
     var warn = document.getElementById('alreadyWarn');
-    if (json.edod) {
+    if (json.cadStatus === 'Yes') {
       warn.style.display = 'block';
       warn.textContent = '⚠️ EDOD already set (' + json.edod + ') — will overwrite';
     } else {
