@@ -1,3 +1,7 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Tree Making Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -13,7 +17,9 @@
   body{
     font-family:'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;
     background:var(--bg); color:var(--ink); min-height:100vh;
-    padding:20px; padding-bottom:110px;
+    padding:16px; padding-bottom:110px;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-text-size-adjust:100%;
   }
   body::before{
     content:''; position:fixed; inset:0;
@@ -103,9 +109,10 @@
     background:linear-gradient(135deg, #2E6B4F, #1a4a33);
     color:#fff; font-size:18px; font-weight:700; margin-top:6px;
     box-shadow:0 4px 14px rgba(46,107,79,0.4); cursor:pointer;
-    letter-spacing:0.02em;
+    letter-spacing:0.02em; touch-action:manipulation;
+    min-height:60px;
   }
-  .done-btn:active{opacity:0.88;}
+  .done-btn:active{opacity:0.88; transform:scale(0.98);}
   .status-bar{
     position:fixed; bottom:0; left:0; right:0;
     background:var(--card); border-top:1px solid var(--border);
@@ -117,7 +124,8 @@
   .status-bar .offline{background:var(--ink-faint);}
   .status-bar button{
     background:var(--surface-alt); border:1px solid var(--border); color:var(--ink);
-    padding:7px 14px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;
+    padding:9px 16px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;
+    touch-action:manipulation; min-height:36px;
   }
   .setup-overlay{
     position:fixed; inset:0; background:var(--bg);
@@ -125,12 +133,14 @@
   }
   .setup-overlay h2{font-family:'DM Serif Display',serif; font-size:22px; color:var(--ink); margin-bottom:6px;}
   .setup-overlay p{color:var(--ink-faint); font-size:13px; margin-bottom:22px;}
-  .setup-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .setup-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   .chip{
-    text-align:center; padding:18px 8px; border-radius:12px; font-size:15px; font-weight:600;
+    text-align:center; padding:20px 8px; border-radius:12px; font-size:16px; font-weight:600;
     border:1.5px solid var(--border); background:var(--card); color:var(--ink);
-    cursor:pointer; user-select:none;
+    cursor:pointer; user-select:none; touch-action:manipulation;
+    min-height:64px; display:flex; align-items:center; justify-content:center;
   }
+  .chip:active{background:var(--surface-alt);}
   .toast{
     position:fixed; top:18px; left:18px; right:18px;
     padding:13px; border-radius:12px; text-align:center; font-size:14px; font-weight:600;
@@ -198,7 +208,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 <script>
 (function() {
-  var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/brahammandjewels.com/s/AKfycbwaBd1DOgSQmWMSoLFAHPyhnjFICEXJC4-e18IuAHQMkF7iDX5Z4ZLYKG-jIv6t3yqD/exec';
+  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzq3Sl8Gm8fDDN_9E_hF_PWReruslhlZAvspuqMVTRqlmRQ1-PuPsZyWh1Kxm-DXUy1cQ/exec';
   var TEAM = [
     { code: 'RS', name: 'Roshan' },
     { code: 'AJ', name: 'Anuj' },
