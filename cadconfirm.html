@@ -1,934 +1,616 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#6d28d9">
-  <title>CAD Confirmed</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>CAD Confirmed</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --gold:#B8975A; --gold-light:#D4B483; --gold-dark:#8C6F3E;
+    --ink:#1A1A1A; --ink-muted:#5A5A5A; --ink-faint:#9A9A9A;
+    --surface:#FAFAF8; --surface-alt:#F3F1EC;
+    --border:rgba(184,151,90,0.2); --border-strong:rgba(184,151,90,0.45);
+    --success:#2E6B4F; --error:#8B2E2E;
+    --bg:var(--surface); --card:#fff;
+  }
+  body{
+    font-family:'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh;
+    padding:16px; padding-bottom:110px;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-text-size-adjust:100%;
+  }
+  body::before{
+    content:''; position:fixed; inset:0;
+    background-image:linear-gradient(rgba(184,151,90,0.04) 1px, transparent 1px),
+                      linear-gradient(90deg,rgba(184,151,90,0.04) 1px,transparent 1px);
+    background-size:40px 40px; pointer-events:none; z-index:0;
+  }
+  .page{position:relative; z-index:1; max-width:480px; margin:0 auto;}
+  .brand{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+  .monogram{
+    width:42px; height:42px; border-radius:50%;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold-dark));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'DM Serif Display',serif; color:#fff; font-size:17px; flex-shrink:0;
+    box-shadow:0 2px 6px rgba(140,111,62,0.3);
+  }
+  .brand h1{font-family:'DM Serif Display',serif; font-size:18px; font-weight:400; color:var(--ink);}
+  .brand p{font-size:11px; color:var(--ink-faint); margin-top:1px;}
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:20px;
+    padding:22px; margin-bottom:16px; position:relative;
+    box-shadow:0 1px 2px rgba(0,0,0,0.04),0 4px 16px rgba(0,0,0,0.05);
+  }
+  .card::before{
+    content:''; position:absolute; top:0; left:24px; right:24px; height:3px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+    border-radius:0 0 3px 3px;
+  }
+  .section-label{
+    font-size:11px; color:var(--ink-muted); text-transform:uppercase;
+    letter-spacing:0.08em; font-weight:600; margin-bottom:10px;
+  }
+  .qr-scan-btn{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    width:100%; padding:16px; border-radius:14px; margin-bottom:14px;
+    background:var(--surface-alt); border:2px dashed var(--border-strong);
+    color:var(--ink-muted); font-size:15px; font-weight:600;
+    cursor:pointer; user-select:none; transition:background 0.15s,border-color 0.15s;
+  }
+  .qr-scan-btn:active{background:var(--border);}
+  .qr-icon{font-size:24px;}
+  #qrViewport{
+    display:none; position:relative; width:100%;
+    aspect-ratio:1/1; border-radius:14px; overflow:hidden;
+    background:#000; margin-bottom:14px;
+    border:2px solid var(--border-strong);
+  }
+  #qrVideo{width:100%; height:100%; object-fit:cover; display:block;}
+  .qr-corners{position:absolute; inset:0; pointer-events:none;}
+  .qr-close-btn{
+    position:absolute; top:10px; right:10px;
+    background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+    color:#fff; border:none; border-radius:20px;
+    padding:6px 14px; font-size:13px; font-weight:600;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+  }
+  .qr-status{
+    position:absolute; bottom:0; left:0; right:0;
+    background:linear-gradient(transparent,rgba(0,0,0,0.65));
+    color:rgba(255,255,255,0.85); text-align:center;
+    font-size:13px; padding:18px 12px 14px; font-weight:500;
+  }
+  .order-input-row{display:flex; gap:10px; align-items:center; margin-bottom:6px;}
+  .order-input{
+    flex:1; background:var(--surface-alt); border:2px solid var(--border-strong);
+    border-radius:14px; padding:14px 16px;
+    font-size:20px; font-family:'DM Serif Display',serif;
+    color:var(--ink); outline:none; letter-spacing:1px;
+    transition:border-color 0.15s;
+  }
+  .order-input:focus{border-color:var(--gold);}
+  .order-input::placeholder{color:var(--ink-faint); font-family:'DM Sans',sans-serif; font-size:14px; letter-spacing:0;}
+  .lookup-btn{
+    padding:14px 18px; border-radius:14px; border:none;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold-dark));
+    color:#fff; font-size:14px; font-weight:700;
+    cursor:pointer; white-space:nowrap; touch-action:manipulation;
+    font-family:'DM Sans',sans-serif;
+  }
+  .lookup-btn:active{opacity:0.85;}
+  .tag-hint{font-size:11px; color:var(--ink-faint); margin-top:6px;}
 
-    :root {
-      --primary: #7c3aed;
-      --primary-dark: #5b21b6;
-      --primary-light: #ede9fe;
-      --accent: #a78bfa;
-      --bg: #f5f3ff;
-      --card: #fff;
-      --text: #1e1b4b;
-      --muted: #6b7280;
-      --success: #059669;
-      --danger: #dc2626;
-      --radius: 16px;
-    }
+  /* Order detail card */
+  .order-detail{display:none;}
+  .order-detail.show{display:block;}
+  .order-detail-inner{
+    background:var(--surface-alt); border-radius:14px;
+    padding:16px; margin-bottom:14px;
+  }
+  .order-num{font-family:'DM Serif Display',serif; font-size:22px; color:var(--ink); margin-bottom:6px;}
+  .order-badges{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:0;}
+  .badge{
+    background:rgba(184,151,90,0.12); color:var(--gold-dark);
+    border:1px solid var(--border-strong); border-radius:20px;
+    padding:4px 12px; font-size:12px; font-weight:600;
+  }
+  .badge.company{background:rgba(46,107,79,0.08); color:var(--success); border-color:rgba(46,107,79,0.25);}
+  .already-warn{
+    background:rgba(139,46,46,0.07); border:1px solid rgba(139,46,46,0.2);
+    border-radius:10px; padding:8px 12px;
+    font-size:12px; color:var(--error); font-weight:600; margin-top:10px;
+  }
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: var(--text);
-      -webkit-tap-highlight-color: transparent;
-      overflow: hidden;
-    }
+  /* Weight input */
+  .weight-row{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+  .weight-input{
+    flex:1; background:var(--surface-alt); border:2px solid var(--border-strong);
+    border-radius:14px; padding:14px 16px;
+    font-size:24px; font-family:'DM Serif Display',serif;
+    color:var(--ink); outline:none; text-align:right;
+    transition:border-color 0.15s; min-width:0;
+  }
+  .weight-input:focus{border-color:var(--gold);}
+  .weight-input::placeholder{color:var(--ink-faint); font-size:16px; font-family:'DM Sans',sans-serif;}
+  .weight-unit{font-size:16px; font-weight:600; color:var(--ink-muted); white-space:nowrap;}
 
-    /* ── Screens ── */
-    .screen {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding: 0 20px 32px;
-    }
-    .screen.active { display: flex; }
+  /* Confirm button */
+  .done-btn{
+    width:100%; padding:20px; border-radius:14px; border:none;
+    background:linear-gradient(135deg,#2E6B4F,#1a4a33);
+    color:#fff; font-size:18px; font-weight:700; margin-top:6px;
+    box-shadow:0 4px 14px rgba(46,107,79,0.4); cursor:pointer;
+    letter-spacing:0.02em; touch-action:manipulation; min-height:60px;
+  }
+  .done-btn:active{opacity:0.88; transform:scale(0.98);}
+  .done-btn:disabled{opacity:0.45; pointer-events:none;}
 
-    /* ── Header ── */
-    .header {
-      width: 100%;
-      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-      color: #fff;
-      padding: 20px 20px 18px;
-      margin: 0 -20px;
-      width: calc(100% + 40px);
-      text-align: center;
-      position: relative;
-    }
-    .header .mono {
-      font-size: 2rem;
-      margin-bottom: 4px;
-    }
-    .header h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-    .header p {
-      font-size: 0.8rem;
-      opacity: 0.75;
-      margin-top: 2px;
-    }
-    .back-btn {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(255,255,255,0.15);
-      border: none;
-      color: #fff;
-      border-radius: 10px;
-      padding: 8px 14px;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
+  /* EDOD result */
+  .edod-result{display:none;}
+  .edod-result.show{display:block;}
+  .edod-inner{
+    background:rgba(46,107,79,0.06); border:1px solid rgba(46,107,79,0.2);
+    border-radius:14px; padding:18px; text-align:center;
+  }
+  .edod-label-sm{font-size:11px; color:var(--success); font-weight:600; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;}
+  .edod-date-big{font-family:'DM Serif Display',serif; font-size:26px; color:var(--success);}
+  .edod-order-sm{font-size:12px; color:var(--ink-faint); margin-top:4px;}
+  .scan-next-btn{
+    width:100%; padding:16px; border-radius:14px; border:none;
+    background:var(--surface-alt); border:1.5px solid var(--border-strong);
+    color:var(--ink); font-size:15px; font-weight:600; margin-top:10px;
+    cursor:pointer; touch-action:manipulation;
+  }
+  .scan-next-btn:active{background:var(--border);}
 
-    /* ── User chips ── */
-    .section-label {
-      width: 100%;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      margin: 24px 0 10px;
-    }
-    .user-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      width: 100%;
-    }
-    .user-btn {
-      background: var(--card);
-      border: 2px solid #e5e7eb;
-      border-radius: var(--radius);
-      padding: 18px 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);
-      cursor: pointer;
-      text-align: center;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .user-btn:active, .user-btn.selected {
-      background: var(--primary-light);
-      border-color: var(--primary);
-      color: var(--primary-dark);
-    }
-    .user-initial {
-      display: block;
-      font-size: 1.8rem;
-      margin-bottom: 4px;
-    }
+  /* Status bar */
+  .status-bar{
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--card); border-top:1px solid var(--border);
+    padding:12px 18px; display:flex; justify-content:space-between; align-items:center;
+    font-size:12px; color:var(--ink-muted); z-index:10;
+  }
+  .status-bar .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px;}
+  .status-bar .online{background:var(--success);}
+  .status-bar .offline{background:var(--ink-faint);}
+  .status-bar button{
+    background:var(--surface-alt); border:1px solid var(--border); color:var(--ink);
+    padding:9px 16px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;
+    touch-action:manipulation; min-height:36px;
+  }
 
-    /* ── Scan card ── */
-    .scan-card {
-      background: var(--card);
-      border-radius: var(--radius);
-      padding: 24px 20px;
-      width: 100%;
-      margin-top: 20px;
-      box-shadow: 0 2px 12px rgba(109,40,217,0.07);
-    }
-    .scan-card label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .scan-input {
-      width: 100%;
-      border: 2px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 14px 16px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.15s;
-      -webkit-appearance: none;
-    }
-    .scan-input:focus { border-color: var(--primary); }
+  /* Setup overlay */
+  .setup-overlay{
+    position:fixed; inset:0; background:var(--bg);
+    display:flex; flex-direction:column; justify-content:center; padding:28px; z-index:99;
+  }
+  .setup-overlay h2{font-family:'DM Serif Display',serif; font-size:22px; color:var(--ink); margin-bottom:6px;}
+  .setup-overlay p{color:var(--ink-faint); font-size:13px; margin-bottom:22px;}
+  .setup-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .chip{
+    text-align:center; padding:20px 8px; border-radius:12px; font-size:16px; font-weight:600;
+    border:1.5px solid var(--border); background:var(--card); color:var(--ink);
+    cursor:pointer; user-select:none; touch-action:manipulation;
+    min-height:64px; display:flex; align-items:center; justify-content:center;
+  }
+  .chip:active{background:var(--surface-alt);}
 
-    /* ── Buttons ── */
-    .btn {
-      width: 100%;
-      border: none;
-      border-radius: var(--radius);
-      padding: 16px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 14px;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      color: #fff;
-    }
-    .btn-success {
-      background: linear-gradient(135deg, #059669 0%, #065f46 100%);
-      color: #fff;
-    }
-    .btn-danger {
-      background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-      color: #fff;
-    }
-    .btn-outline {
-      background: transparent;
-      border: 2px solid var(--primary);
-      color: var(--primary);
-    }
-    .btn:disabled { opacity: 0.5; pointer-events: none; }
+  /* Toast */
+  .toast{
+    position:fixed; top:18px; left:18px; right:18px;
+    padding:13px; border-radius:12px; text-align:center; font-size:14px; font-weight:600;
+    opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:50;
+    box-shadow:0 4px 16px rgba(0,0,0,0.15);
+  }
+  .toast.success{background:var(--success); color:#fff;}
+  .toast.fail{background:var(--error); color:#fff;}
+  .toast.warn{background:#7c5f1a; color:#fff;}
+  .toast.show{opacity:1;}
 
-    /* ── Order card ── */
-    .order-card {
-      background: var(--card);
-      border-radius: var(--radius);
-      padding: 20px;
-      width: 100%;
-      margin-top: 20px;
-      border-left: 5px solid var(--primary);
-      box-shadow: 0 2px 12px rgba(109,40,217,0.07);
-    }
-    .order-no {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--primary-dark);
-      letter-spacing: 0.5px;
-    }
-    .order-meta {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-    .badge {
-      background: var(--primary-light);
-      color: var(--primary-dark);
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 0.82rem;
-      font-weight: 600;
-    }
-    .badge.company {
-      background: #f0fdf4;
-      color: #065f46;
-    }
-    .already-badge {
-      background: #fef3c7;
-      color: #92400e;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-top: 10px;
-      text-align: center;
-    }
+  .sub-line{font-size:12px; color:var(--ink-faint); margin-bottom:18px;}
+  .sub-line span{text-decoration:underline; cursor:pointer; color:var(--gold-dark); font-weight:600;}
+  .log-link{text-align:center; font-size:12px; color:var(--ink-faint); margin-top:8px; text-decoration:underline; cursor:pointer;}
 
-    /* ── Weight input ── */
-    .weight-section {
-      background: var(--card);
-      border-radius: var(--radius);
-      padding: 20px;
-      width: 100%;
-      margin-top: 14px;
-      box-shadow: 0 2px 12px rgba(109,40,217,0.07);
-    }
-    .weight-label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 8px;
-    }
-    .weight-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .weight-input {
-      flex: 1;
-      border: 2px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 14px 16px;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.15s;
-      -webkit-appearance: none;
-      min-width: 0;
-    }
-    .weight-input:focus { border-color: var(--primary); }
-    .weight-unit {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--muted);
-      white-space: nowrap;
-    }
+  /* Loading spinner inline */
+  .spinner{
+    display:inline-block; width:16px; height:16px;
+    border:2.5px solid rgba(255,255,255,0.35); border-top-color:#fff;
+    border-radius:50%; animation:spin 0.7s linear infinite;
+    vertical-align:middle; margin-right:8px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
 
-    /* ── Yes / No buttons ── */
-    .action-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      width: 100%;
-      margin-top: 14px;
-    }
-    .btn-yes {
-      background: linear-gradient(135deg, #059669, #065f46);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      padding: 18px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    .btn-no {
-      background: linear-gradient(135deg, #dc2626, #991b1b);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      padding: 18px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    .btn-yes:active, .btn-no:active { transform: scale(0.97); }
-
-    /* ── Confirmation modal ── */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(30, 27, 75, 0.6);
-      backdrop-filter: blur(4px);
-      z-index: 100;
-      align-items: flex-end;
-      justify-content: center;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal {
-      background: var(--card);
-      border-radius: 24px 24px 0 0;
-      padding: 28px 24px 36px;
-      width: 100%;
-      max-width: 480px;
-    }
-    .modal h2 {
-      font-size: 1.3rem;
-      font-weight: 800;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
-    .modal p {
-      font-size: 0.9rem;
-      color: var(--muted);
-      margin-bottom: 20px;
-    }
-    .modal-detail {
-      background: var(--primary-light);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 20px;
-    }
-    .modal-detail-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.9rem;
-      margin-bottom: 6px;
-    }
-    .modal-detail-row:last-child { margin-bottom: 0; }
-    .modal-detail-row .key { color: var(--muted); }
-    .modal-detail-row .val { font-weight: 700; color: var(--text); }
-
-    /* ── Success screen ── */
-    .success-icon {
-      font-size: 4rem;
-      margin: 32px 0 16px;
-    }
-    .success-title {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--success);
-      margin-bottom: 8px;
-    }
-    .edod-card {
-      background: #f0fdf4;
-      border: 2px solid #6ee7b7;
-      border-radius: var(--radius);
-      padding: 20px;
-      width: 100%;
-      margin-top: 20px;
-      text-align: center;
-    }
-    .edod-label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #059669;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 6px;
-    }
-    .edod-date {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: #065f46;
-    }
-    .edod-order {
-      font-size: 0.9rem;
-      color: #059669;
-      margin-top: 4px;
-    }
-
-    /* ── Toast ── */
-    .toast {
-      position: fixed;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%) translateY(120px);
-      background: #1e1b4b;
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-      z-index: 200;
-      white-space: nowrap;
-      max-width: 85vw;
-      text-align: center;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); }
-    .toast.warn { background: #92400e; }
-    .toast.error { background: #991b1b; }
-
-    /* ── Loading spinner ── */
-    .spinner {
-      display: inline-block;
-      width: 20px; height: 20px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 8px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .loading-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(245,243,255,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      z-index: 150;
-      gap: 12px;
-    }
-    .loading-overlay.active { display: flex; }
-    .loading-overlay .spin2 {
-      width: 40px; height: 40px;
-      border: 4px solid var(--primary-light);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    .loading-overlay p {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--primary-dark);
-    }
-  </style>
-</head>
-<body>
-
-<!-- ══════════════ SCREEN 1: WHO ARE YOU ══════════════ -->
-<div id="screen-team" class="screen active">
-  <div class="header">
-    <div class="mono">✏️</div>
-    <h1>CAD Confirmed</h1>
-    <p>Design confirmation portal</p>
-  </div>
-
-  <div class="section-label">Who are you?</div>
-  <div class="user-grid" id="userGrid">
-    <!-- Populated by JS — edit TEAM_MEMBERS below -->
-  </div>
-</div>
-
-<!-- ══════════════ SCREEN 2: SCAN / ENTER ORDER ══════════════ -->
-<div id="screen-scan" class="screen">
-  <div class="header">
-    <button class="back-btn" onclick="showScreen('screen-team')">← Back</button>
-    <div class="mono">✏️</div>
-    <h1>CAD Confirmed</h1>
-    <p id="scanUserLabel"></p>
-  </div>
-
-  <div class="scan-card" style="margin-top:24px;">
-    <label>Enter Order Number</label>
-    <input
-      id="orderInput"
-      class="scan-input"
-      type="text"
-      inputmode="numeric"
-      pattern="[0-9]*"
-      placeholder="e.g. 22020"
-      autocomplete="off"
-      autofocus
-    >
-    <button class="btn btn-primary" id="lookupBtn" onclick="handleLookup()">
-      Look Up Order →
-    </button>
-  </div>
-
-  <div class="scan-card" style="margin-top:14px; text-align:center;">
-    <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px;">— or scan QR code —</div>
-    <button class="btn btn-outline" onclick="startQR()" style="margin-top:0;">
-      📷 Open Camera
-    </button>
-    <video id="qrVideo" style="display:none;width:100%;border-radius:12px;margin-top:12px;" autoplay muted playsinline></video>
-    <div id="qrStatus" style="font-size:0.8rem;color:var(--muted);margin-top:6px;"></div>
-  </div>
-</div>
-
-<!-- ══════════════ SCREEN 3: ORDER DETAILS + WEIGHT ══════════════ -->
-<div id="screen-order" class="screen">
-  <div class="header">
-    <button class="back-btn" onclick="cancelOrder()">← Back</button>
-    <div class="mono">✏️</div>
-    <h1>Confirm Design</h1>
-    <p id="orderUserLabel"></p>
-  </div>
-
-  <div class="order-card">
-    <div class="order-no" id="displayOrderNo">—</div>
-    <div class="order-meta">
-      <span class="badge" id="displayMelting">—</span>
-      <span class="badge company" id="displayCompany">—</span>
-    </div>
-    <div id="alreadyDoneWarning" class="already-badge" style="display:none;">
-      ⚠️ EDOD already set — submitting will overwrite it
-    </div>
-  </div>
-
-  <div class="weight-section">
-    <div class="weight-label">Enter Weight</div>
-    <div class="weight-row">
-      <input
-        id="weightInput"
-        class="weight-input"
-        type="number"
-        inputmode="decimal"
-        placeholder="0"
-        min="0.1"
-        step="0.1"
-        autocomplete="off"
-      >
-      <span class="weight-unit">grams</span>
-    </div>
-  </div>
-
-  <div class="action-row">
-    <button class="btn-no" onclick="rejectOrder()">✗ No</button>
-    <button class="btn-yes" onclick="confirmYes()">✓ Yes</button>
-  </div>
-</div>
-
-<!-- ══════════════ SCREEN 4: SUCCESS ══════════════ -->
-<div id="screen-success" class="screen">
-  <div class="header">
-    <div class="mono">✏️</div>
-    <h1>CAD Confirmed</h1>
-    <p id="successUserLabel"></p>
-  </div>
-
-  <div class="success-icon">✅</div>
-  <div class="success-title">EDOD Set!</div>
-  <div style="font-size:0.95rem;color:var(--muted);text-align:center;padding:0 10px;">
-    CAD confirmed and delivery date stored in FMS
-  </div>
-
-  <div class="edod-card">
-    <div class="edod-label">Expected Delivery Date</div>
-    <div class="edod-date" id="edodDateDisplay">—</div>
-    <div class="edod-order" id="successOrderNo">Order —</div>
-  </div>
-
-  <button class="btn btn-primary" onclick="resetToScan()" style="margin-top:24px;">
-    Scan Next Order →
-  </button>
-  <button class="btn btn-outline" onclick="showScreen('screen-team')" style="margin-top:10px;">
-    Change User
-  </button>
-</div>
-
-<!-- ══════════════ CONFIRMATION MODAL ══════════════ -->
-<div class="modal-overlay" id="confirmModal">
-  <div class="modal">
-    <h2>Confirm CAD?</h2>
-    <p>This will calculate and store the EDOD in FMS.</p>
-    <div class="modal-detail">
-      <div class="modal-detail-row">
-        <span class="key">Order No</span>
-        <span class="val" id="modalOrderNo">—</span>
-      </div>
-      <div class="modal-detail-row">
-        <span class="key">Melting</span>
-        <span class="val" id="modalMelting">—</span>
-      </div>
-      <div class="modal-detail-row">
-        <span class="key">Company</span>
-        <span class="val" id="modalCompany">—</span>
-      </div>
-      <div class="modal-detail-row">
-        <span class="key">Weight</span>
-        <span class="val" id="modalWeight">— g</span>
-      </div>
-      <div class="modal-detail-row">
-        <span class="key">Confirmed by</span>
-        <span class="val" id="modalUser">—</span>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <button class="btn btn-danger" onclick="closeModal()" style="margin-top:0;">Cancel</button>
-      <button class="btn btn-success" id="finalSubmitBtn" onclick="submitConfirmed()" style="margin-top:0;">✓ Confirm</button>
-    </div>
-  </div>
-</div>
-
-<!-- Loading overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spin2"></div>
-  <p id="loadingMsg">Looking up order…</p>
-</div>
-
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- WHO ARE YOU overlay -->
+<div class="setup-overlay" id="setupOverlay" style="display:none;">
+  <h2>Who are you?</h2>
+  <p>Pick your name — it stays saved on this device.</p>
+  <div class="setup-grid" id="setupGrid"></div>
+</div>
+
+<div class="page" id="mainApp">
+  <div class="brand">
+    <div class="monogram">✏️</div>
+    <div>
+      <h1>CAD Confirmed</h1>
+      <p>Brahammand Jewels — Design Tracker</p>
+    </div>
+  </div>
+  <div class="sub-line">Logged in as: <b id="currentUser">—</b> · <span id="changeUser">change</span></div>
+
+  <!-- ── SCAN CARD ── -->
+  <div class="card">
+    <div class="section-label">Scan or Enter Order Number</div>
+    <div class="qr-scan-btn" id="qrScanBtn">
+      <span class="qr-icon">📷</span>
+      <span id="qrBtnText">Tap to scan QR code</span>
+    </div>
+    <div id="qrViewport">
+      <video id="qrVideo" autoplay playsinline muted></video>
+      <svg class="qr-corners" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <path d="M10,22 L10,10 L22,10" stroke="#B8975A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M78,10 L90,10 L90,22" stroke="#B8975A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M10,78 L10,90 L22,90" stroke="#B8975A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M90,78 L90,90 L78,90" stroke="#B8975A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <button class="qr-close-btn" id="qrCloseBtn">✓ Done scanning</button>
+      <div class="qr-status" id="qrStatus">Starting camera…</div>
+    </div>
+    <div class="order-input-row">
+      <input class="order-input" type="number" id="orderInput"
+             placeholder="or type order no…" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+      <button class="lookup-btn" id="lookupBtn">Look up →</button>
+    </div>
+    <div class="tag-hint">Scan QR or type order number, then tap Look up.</div>
+  </div>
+
+  <!-- ── ORDER DETAIL + WEIGHT CARD ── -->
+  <div class="card order-detail" id="orderDetailCard">
+    <div class="section-label">Order Details</div>
+    <div class="order-detail-inner">
+      <div class="order-num" id="displayOrderNo">—</div>
+      <div class="order-badges">
+        <span class="badge" id="displayMelting">—</span>
+        <span class="badge company" id="displayCompany">—</span>
+      </div>
+      <div class="already-warn" id="alreadyWarn" style="display:none;"></div>
+    </div>
+
+    <div class="section-label">Enter Weight</div>
+    <div class="weight-row">
+      <input class="weight-input" type="number" id="weightInput"
+             placeholder="0" inputmode="decimal" min="0.1" step="0.1" autocomplete="off">
+      <span class="weight-unit">grams</span>
+    </div>
+    <div class="tag-hint">Enter the weight in grams, then confirm below.</div>
+
+    <button class="done-btn" id="confirmBtn" style="margin-top:16px;">✅ CAD Confirmed</button>
+  </div>
+
+  <!-- ── EDOD RESULT ── -->
+  <div class="edod-result" id="edodResult">
+    <div class="card">
+      <div class="section-label">EDOD Set Successfully</div>
+      <div class="edod-inner">
+        <div class="edod-label-sm">Expected Delivery Date</div>
+        <div class="edod-date-big" id="edodDateDisplay">—</div>
+        <div class="edod-order-sm" id="edodOrderDisplay">Order —</div>
+      </div>
+      <button class="scan-next-btn" id="scanNextBtn">Scan Next Order →</button>
+    </div>
+  </div>
+
+  <div class="log-link" id="viewLogLink">View today's entries on this device (<span id="logCount">0</span>)</div>
+</div>
+
+<div class="status-bar">
+  <div><span class="dot offline" id="netDot"></span><span id="netText">Offline</span> · <span id="queueText">0 pending</span></div>
+  <button id="syncBtn">Sync now</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 <script>
-  // ═══════════════════════════════════════════════════════════════
-  // CONFIG — update these as needed
-  // ═══════════════════════════════════════════════════════════════
-  const APPS_SCRIPT_URL = 'https://script.google.com/a/macros/brahammandjewels.com/s/AKfycbwaBd1DOgSQmWMSoLFAHPyhnjFICEXJC4-e18IuAHQMkF7iDX5Z4ZLYKG-jIv6t3yqD/exec';
-  const QUEUE_KEY = 'cad_entry_queue_v1';
-
-  // Team members — initials shown on chip, name sent to GAS
-  const TEAM_MEMBERS = [
-    { name: 'Pranav',  initial: 'P'  },
-    { name: 'Harsh',   initial: 'HS' },
-    { name: 'Kiran',   initial: 'KR' },  // ← update with your actual CAD team
-    { name: 'Ravi',    initial: 'RV' },  // ← update with your actual CAD team
-    { name: 'Sheela',  initial: 'SH' },  // ← update with your actual CAD team
+(function() {
+  var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/brahammandjewels.com/s/AKfycbwaBd1DOgSQmWMSoLFAHPyhnjFICEXJC4-e18IuAHQMkF7iDX5Z4ZLYKG-jIv6t3yqD/exec';
+  var TEAM = [
+    { code: 'P',  name: 'Pranav' },
+    { code: 'HS', name: 'Harsh'  },
+    { code: 'KR', name: 'Kiran'  },  // ← update with your actual CAD team
+    { code: 'RV', name: 'Ravi'   },  // ← update with your actual CAD team
+    { code: 'SH', name: 'Sheela' }   // ← update with your actual CAD team
   ];
+  var QUEUE_KEY   = 'cad_entry_queue_v1';
+  var USER_KEY    = 'cad_device_user_v1';
+  var COUNTER_KEY = 'cad_entry_counter_v1';
+  var DEVICE_KEY  = 'cad_device_id_v1';
 
-  // ═══════════════════════════════════════════════════════════════
-  // STATE
-  // ═══════════════════════════════════════════════════════════════
-  let selectedUser = '';
-  let currentOrder = null;  // { orderNo, melting, company, edod }
-  let qrStream = null;
-  let qrInterval = null;
+  var currentOrder = null;
 
-  // ═══════════════════════════════════════════════════════════════
-  // BOOT — build team grid
-  // ═══════════════════════════════════════════════════════════════
-  (function buildTeamGrid() {
-    const grid = document.getElementById('userGrid');
-    TEAM_MEMBERS.forEach(function(m) {
-      const btn = document.createElement('button');
-      btn.className = 'user-btn';
-      btn.innerHTML = '<span class="user-initial">' + m.initial + '</span>' + m.name;
-      btn.onclick = function() { selectUser(m.name); };
-      grid.appendChild(btn);
+  // ── Device ID ──────────────────────────────────────────────────────────────
+  var deviceId = localStorage.getItem(DEVICE_KEY);
+  if (!deviceId) {
+    deviceId = Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,10);
+    localStorage.setItem(DEVICE_KEY, deviceId);
+  }
+
+  // ── User ───────────────────────────────────────────────────────────────────
+  function getUser() { try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch(e){ return null; } }
+  function setUser(u) {
+    localStorage.setItem(USER_KEY, JSON.stringify(u));
+    document.getElementById('currentUser').textContent = u.name;
+    document.getElementById('setupOverlay').style.display = 'none';
+  }
+  function renderSetup() {
+    var grid = document.getElementById('setupGrid');
+    grid.innerHTML = '';
+    TEAM.forEach(function(u) {
+      var el = document.createElement('div');
+      el.className = 'chip';
+      el.textContent = u.name;
+      el.onclick = function() { setUser(u); };
+      grid.appendChild(el);
     });
-  })();
-
-  // ═══════════════════════════════════════════════════════════════
-  // NAVIGATION
-  // ═══════════════════════════════════════════════════════════════
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(function(s) {
-      s.classList.remove('active');
-    });
-    document.getElementById(id).classList.add('active');
-    window.scrollTo(0, 0);
   }
+  document.getElementById('changeUser').onclick = function() {
+    document.getElementById('setupOverlay').style.display = 'flex';
+  };
+  var existingUser = getUser();
+  if (existingUser) { document.getElementById('currentUser').textContent = existingUser.name; }
+  else { document.getElementById('setupOverlay').style.display = 'flex'; }
+  renderSetup();
 
-  function selectUser(name) {
-    selectedUser = name;
-    document.getElementById('scanUserLabel').textContent = '👤 ' + name;
-    document.getElementById('orderUserLabel').textContent = '👤 ' + name;
-    document.getElementById('successUserLabel').textContent = '👤 ' + name;
-    showScreen('screen-scan');
-    setTimeout(function() {
-      document.getElementById('orderInput').focus();
-    }, 200);
+  function getNextCounter() {
+    var n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
+    localStorage.setItem(COUNTER_KEY, String(n));
+    return n;
   }
+  function makeEntryId(userCode) { return deviceId + '-' + userCode + '-' + getNextCounter(); }
 
-  function cancelOrder() {
-    stopQR();
-    currentOrder = null;
-    document.getElementById('orderInput').value = '';
-    document.getElementById('weightInput').value = '';
-    showScreen('screen-scan');
+  // ── QR Scanning ────────────────────────────────────────────────────────────
+  var qrScanBtn  = document.getElementById('qrScanBtn');
+  var qrVideo    = document.getElementById('qrVideo');
+  var qrViewport = document.getElementById('qrViewport');
+  var qrStatus   = document.getElementById('qrStatus');
+  var qrStream   = null, qrControls = null, codeReader = null;
+
+  function stopCamera() {
+    if (qrControls) { try { qrControls.stop(); } catch(e){} qrControls = null; }
+    if (qrStream)   { qrStream.getTracks().forEach(function(t){ t.stop(); }); qrStream = null; }
+    qrVideo.srcObject = null;
+    qrViewport.style.display = 'none';
+    qrScanBtn.style.display  = 'flex';
   }
-
-  function resetToScan() {
-    currentOrder = null;
-    document.getElementById('orderInput').value = '';
-    document.getElementById('weightInput').value = '';
-    showScreen('screen-scan');
-    setTimeout(function() {
-      document.getElementById('orderInput').focus();
-    }, 200);
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // ORDER LOOKUP
-  // ═══════════════════════════════════════════════════════════════
-  document.getElementById('orderInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') handleLookup();
+  document.getElementById('qrCloseBtn').addEventListener('click', stopCamera);
+  qrScanBtn.addEventListener('click', function() {
+    if (!window.ZXing) { showToast('Scanner still loading — try again', 'fail'); return; }
+    qrScanBtn.style.display  = 'none';
+    qrViewport.style.display = 'block';
+    qrStatus.textContent     = 'Starting camera…';
+    if (!codeReader) codeReader = new ZXing.BrowserQRCodeReader();
+    codeReader.decodeFromVideoDevice(undefined, qrVideo, function(result, err) {
+      if (result) {
+        var num = result.getText().replace(/\D/g, '');
+        if (num) {
+          stopCamera();
+          document.getElementById('orderInput').value = num;
+          if (navigator.vibrate) navigator.vibrate(60);
+          handleLookup(num);
+        }
+      } else if (err && !(err instanceof ZXing.NotFoundException)) {
+        qrStatus.textContent = 'Error: ' + err.message;
+      }
+    })
+    .then(function(controls) {
+      qrControls = controls;
+      if (qrVideo.srcObject) qrStream = qrVideo.srcObject;
+      qrStatus.textContent = 'Point at a QR code';
+    })
+    .catch(function(err) { stopCamera(); showToast('Camera error: ' + (err.name || err.message), 'fail'); });
   });
 
-  async function handleLookup() {
-    const raw = document.getElementById('orderInput').value.trim();
-    if (!raw) { showToast('Enter an order number', 'warn'); return; }
-    stopQR();
-    showLoading('Looking up order…');
-    try {
-      const url = APPS_SCRIPT_URL + '?action=getOrder&orderNo=' + encodeURIComponent(raw);
-      const resp = await fetch(url);
-      const json = await resp.json();
-      hideLoading();
-      if (json.status === 'found') {
-        displayOrder(json);
-      } else if (json.status === 'not_found') {
-        showToast('Order ' + raw + ' not found in FMS', 'warn');
-      } else {
-        showToast('Error: ' + (json.message || 'unknown'), 'error');
-      }
-    } catch(err) {
-      hideLoading();
-      showToast('Could not reach server — check connection', 'error');
-    }
+  // ── Order Lookup ───────────────────────────────────────────────────────────
+  document.getElementById('orderInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); handleLookup(e.target.value.trim()); }
+  });
+  document.getElementById('lookupBtn').addEventListener('click', function() {
+    handleLookup(document.getElementById('orderInput').value.trim());
+  });
+
+  function handleLookup(orderNo) {
+    orderNo = String(orderNo || '').trim();
+    if (!orderNo) { showToast('Enter an order number first', 'fail'); return; }
+    var u = getUser();
+    if (!u) { document.getElementById('setupOverlay').style.display = 'flex'; return; }
+
+    var btn = document.getElementById('lookupBtn');
+    btn.innerHTML = '<span class="spinner"></span>';
+    btn.disabled = true;
+
+    var url = APPS_SCRIPT_URL + '?action=getOrder&orderNo=' + encodeURIComponent(orderNo);
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(json) {
+        btn.innerHTML = 'Look up →';
+        btn.disabled = false;
+        if (json.status === 'found') {
+          showOrderDetail(json);
+        } else if (json.status === 'not_found') {
+          showToast('Order ' + orderNo + ' not found in FMS', 'fail');
+        } else {
+          showToast('Error: ' + (json.message || 'unknown'), 'fail');
+        }
+      })
+      .catch(function() {
+        btn.innerHTML = 'Look up →';
+        btn.disabled = false;
+        showToast('Cannot reach server — check connection', 'fail');
+      });
   }
 
-  function displayOrder(json) {
+  function showOrderDetail(json) {
     currentOrder = json;
     document.getElementById('displayOrderNo').textContent = json.orderNo;
     document.getElementById('displayMelting').textContent = json.melting || 'Melting N/A';
     document.getElementById('displayCompany').textContent = json.companyName || 'Company N/A';
-    const alreadyWarn = document.getElementById('alreadyDoneWarning');
+    var warn = document.getElementById('alreadyWarn');
     if (json.edod) {
-      alreadyWarn.style.display = 'block';
-      alreadyWarn.textContent = '⚠️ EDOD already set (' + json.edod + ') — submitting will overwrite';
+      warn.style.display = 'block';
+      warn.textContent = '⚠️ EDOD already set (' + json.edod + ') — will overwrite';
     } else {
-      alreadyWarn.style.display = 'none';
+      warn.style.display = 'none';
     }
     document.getElementById('weightInput').value = '';
-    showScreen('screen-order');
-    setTimeout(function() {
-      document.getElementById('weightInput').focus();
-    }, 250);
+    document.getElementById('orderDetailCard').classList.add('show');
+    document.getElementById('edodResult').classList.remove('show');
+    document.getElementById('weightInput').focus();
+    window.scrollTo({ top: document.getElementById('orderDetailCard').offsetTop - 20, behavior: 'smooth' });
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // YES / NO
-  // ═══════════════════════════════════════════════════════════════
-  function rejectOrder() {
-    showToast('❌ ' + currentOrder.orderNo + ' rejected — no changes made');
-    resetToScan();
-  }
+  // ── Confirm ────────────────────────────────────────────────────────────────
+  document.getElementById('confirmBtn').addEventListener('click', function() {
+    var u = getUser();
+    if (!u) { document.getElementById('setupOverlay').style.display = 'flex'; return; }
+    if (!currentOrder) { showToast('Look up an order first', 'fail'); return; }
+    var weight = parseFloat(document.getElementById('weightInput').value);
+    if (!weight || weight <= 0) { showToast('Enter weight in grams', 'fail'); document.getElementById('weightInput').focus(); return; }
 
-  function confirmYes() {
-    const w = parseFloat(document.getElementById('weightInput').value);
-    if (!w || w <= 0) {
-      showToast('Enter weight in grams first', 'warn');
-      document.getElementById('weightInput').focus();
-      return;
-    }
-    // Populate confirmation modal
-    document.getElementById('modalOrderNo').textContent = currentOrder.orderNo;
-    document.getElementById('modalMelting').textContent = currentOrder.melting || '—';
-    document.getElementById('modalCompany').textContent = currentOrder.companyName || '—';
-    document.getElementById('modalWeight').textContent = w + ' g';
-    document.getElementById('modalUser').textContent = selectedUser;
-    document.getElementById('confirmModal').classList.add('active');
-  }
-
-  function closeModal() {
-    document.getElementById('confirmModal').classList.remove('active');
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // SUBMIT — offline queue + sync
-  // ═══════════════════════════════════════════════════════════════
-  async function submitConfirmed() {
-    const weight = parseFloat(document.getElementById('weightInput').value);
-    const entry = {
-      orderNo:    currentOrder.orderNo,
-      weight:     weight,
-      scannedBy:  selectedUser,
-      processes:  ['CADConfirmed'],
-      timestamp:  new Date().toISOString()
-    };
-
-    closeModal();
-    showLoading('Calculating EDOD & saving…');
-
-    const btn = document.getElementById('finalSubmitBtn');
+    var btn = document.getElementById('confirmBtn');
+    btn.innerHTML = '<span class="spinner"></span> Calculating EDOD…';
     btn.disabled = true;
 
-    try {
-      const resp = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify([entry])
-      });
-      const json = await resp.json();
-      btn.disabled = false;
-      hideLoading();
+    var entry = {
+      entryId:   makeEntryId(u.code),
+      scannedBy: u.name,
+      orderNo:   currentOrder.orderNo,
+      weight:    weight,
+      processes: ['CADConfirmed'],
+      timestamp: new Date().toString(),
+      synced:    false
+    };
 
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify([entry])
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(json) {
+      btn.innerHTML = '✅ CAD Confirmed';
+      btn.disabled = false;
       if (json.status === 'ok') {
-        const result = (json.results || [])[0] || {};
+        var result = (json.results || [])[0] || {};
+        entry.synced = true;
+        entry.edodDate = result.edodDate || '';
+        addToQueue(entry);
         if (result.status === 'already_done') {
-          showToast('⚠️ ' + entry.orderNo + ' EDOD was already set — overwritten', 'warn');
+          showToast('⚠️ EDOD overwritten for ' + entry.orderNo, 'warn');
         }
-        showSuccessScreen(entry.orderNo, result.edodDate || '—');
+        showEdodResult(entry.orderNo, result.edodDate || '—');
       } else {
-        // Queue for retry
-        queueEntry(entry);
-        showToast('Saved offline — will sync when connected', 'warn');
-        showSuccessScreen(entry.orderNo, 'Pending sync…');
+        addToQueue(entry);
+        showToast('Saved offline — will sync when online', 'warn');
+        showEdodResult(entry.orderNo, 'Pending sync…');
       }
-    } catch(err) {
+    })
+    .catch(function() {
+      btn.innerHTML = '✅ CAD Confirmed';
       btn.disabled = false;
-      hideLoading();
-      queueEntry(entry);
+      addToQueue(entry);
       showToast('Offline — queued for sync', 'warn');
-      showSuccessScreen(entry.orderNo, 'Pending sync…');
-    }
+      showEdodResult(entry.orderNo, 'Pending sync…');
+    });
+  });
+
+  function showEdodResult(orderNo, edodDate) {
+    document.getElementById('edodDateDisplay').textContent = edodDate;
+    document.getElementById('edodOrderDisplay').textContent = 'Order ' + orderNo;
+    document.getElementById('edodResult').classList.add('show');
+    window.scrollTo({ top: document.getElementById('edodResult').offsetTop - 20, behavior: 'smooth' });
   }
 
-  function showSuccessScreen(orderNo, edodDate) {
-    document.getElementById('edodDateDisplay').textContent = edodDate || '—';
-    document.getElementById('successOrderNo').textContent = 'Order ' + orderNo;
-    showScreen('screen-success');
-    syncQueue();
+  document.getElementById('scanNextBtn').addEventListener('click', function() {
+    currentOrder = null;
+    document.getElementById('orderInput').value = '';
+    document.getElementById('weightInput').value = '';
+    document.getElementById('orderDetailCard').classList.remove('show');
+    document.getElementById('edodResult').classList.remove('show');
+    document.getElementById('confirmBtn').innerHTML = '✅ CAD Confirmed';
+    document.getElementById('confirmBtn').disabled = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(function(){ document.getElementById('orderInput').focus(); }, 300);
+  });
+
+  // ── Queue ──────────────────────────────────────────────────────────────────
+  function getQueue() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch(e){ return []; } }
+  function saveQueue(q) { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch(e){} refreshStatus(); }
+  function addToQueue(entry) { var q = getQueue(); q.push(entry); saveQueue(q); }
+  function refreshStatus() {
+    var q = getQueue();
+    var pending = q.filter(function(item){ return !item.synced; }).length;
+    document.getElementById('queueText').textContent = pending + ' pending';
+    document.getElementById('logCount').textContent = q.length;
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // OFFLINE QUEUE
-  // ═══════════════════════════════════════════════════════════════
-  function getQueue() {
-    try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch(e) { return []; }
-  }
-  function saveQueue(q) {
-    try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch(e) {}
-  }
-  function queueEntry(entry) {
-    const q = getQueue();
-    q.push(entry);
-    saveQueue(q);
-  }
-
-  async function syncQueue() {
-    const q = getQueue();
-    if (!q.length) return;
-    try {
-      const resp = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(q)
-      });
-      const json = await resp.json();
-      if (json.status === 'ok') {
-        saveQueue([]);
-        showToast('✓ ' + q.length + ' queued entry/entries synced');
+  // ── Sync ───────────────────────────────────────────────────────────────────
+  var syncing = false;
+  function trySync() {
+    if (!navigator.onLine || syncing) { updateNetStatus(); return; }
+    var pending = getQueue().filter(function(item){ return !item.synced; });
+    if (pending.length === 0) return;
+    syncing = true;
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(pending)
+    })
+    .then(function(res) {
+      if (res.ok) {
+        var current = getQueue();
+        pending.forEach(function(item) {
+          var target = current.find(function(x){ return x.entryId === item.entryId; });
+          if (target) target.synced = true;
+        });
+        saveQueue(current);
+        showToast('✓ ' + pending.length + ' entry/entries synced', 'success');
       }
-    } catch(e) { /* stay queued */ }
+    })
+    .catch(function(){})
+    .finally(function(){ syncing = false; });
   }
-
-  // Sync on load
-  window.addEventListener('load', function() { syncQueue(); });
-
-  // ═══════════════════════════════════════════════════════════════
-  // QR / CAMERA (simple barcode decode via BarcodeDetector API)
-  // ═══════════════════════════════════════════════════════════════
-  async function startQR() {
-    const video = document.getElementById('qrVideo');
-    const status = document.getElementById('qrStatus');
-    if (qrStream) { stopQR(); return; }
-    try {
-      if (!('BarcodeDetector' in window)) {
-        showToast('Camera scan not supported on this browser — type order number', 'warn');
-        return;
-      }
-      qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      video.srcObject = qrStream;
-      video.style.display = 'block';
-      status.textContent = 'Point camera at QR code…';
-      const detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39'] });
-      qrInterval = setInterval(async function() {
-        try {
-          const barcodes = await detector.detect(video);
-          if (barcodes.length > 0) {
-            const val = barcodes[0].rawValue.trim();
-            stopQR();
-            document.getElementById('orderInput').value = val;
-            handleLookup();
-          }
-        } catch(e) {}
-      }, 400);
-    } catch(err) {
-      showToast('Camera access denied — type order number', 'warn');
-    }
+  document.getElementById('syncBtn').addEventListener('click', function(){ trySync(); });
+  window.addEventListener('online',  function(){ updateNetStatus(); trySync(); });
+  window.addEventListener('offline', updateNetStatus);
+  function updateNetStatus() {
+    var dot  = document.getElementById('netDot');
+    var text = document.getElementById('netText');
+    if (navigator.onLine) { dot.className = 'dot online'; text.textContent = 'Online'; }
+    else                  { dot.className = 'dot offline'; text.textContent = 'Offline'; }
   }
+  setInterval(trySync, 20000);
+  updateNetStatus();
+  refreshStatus();
 
-  function stopQR() {
-    if (qrInterval) { clearInterval(qrInterval); qrInterval = null; }
-    if (qrStream) {
-      qrStream.getTracks().forEach(function(t) { t.stop(); });
-      qrStream = null;
-    }
-    const video = document.getElementById('qrVideo');
-    video.style.display = 'none';
-    video.srcObject = null;
-    document.getElementById('qrStatus').textContent = '';
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // UI HELPERS
-  // ═══════════════════════════════════════════════════════════════
+  // ── Toast ──────────────────────────────────────────────────────────────────
   function showToast(msg, type) {
-    const t = document.getElementById('toast');
+    var t = document.getElementById('toast');
     t.textContent = msg;
-    t.className = 'toast' + (type ? ' ' + type : '') + ' show';
+    t.className = 'toast ' + (type || 'success');
+    t.classList.add('show');
     clearTimeout(t._timer);
-    t._timer = setTimeout(function() { t.classList.remove('show'); }, 3000);
+    t._timer = setTimeout(function(){ t.classList.remove('show'); }, 2500);
   }
 
-  function showLoading(msg) {
-    document.getElementById('loadingMsg').textContent = msg || 'Loading…';
-    document.getElementById('loadingOverlay').classList.add('active');
-  }
-  function hideLoading() {
-    document.getElementById('loadingOverlay').classList.remove('active');
-  }
+  // ── View log ───────────────────────────────────────────────────────────────
+  document.getElementById('viewLogLink').addEventListener('click', function() {
+    var q = getQueue();
+    if (q.length === 0) { alert('No entries on this device yet.'); return; }
+    alert(q.map(function(item){
+      return item.orderNo + ' · ' + (item.weight || '?') + 'g · EDOD: ' + (item.edodDate || '?') + ' — ' + (item.synced ? '✓ synced' : '⏳ pending');
+    }).join('\n'));
+  });
+})();
 </script>
-</body>
-</html>
