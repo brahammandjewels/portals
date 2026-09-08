@@ -260,12 +260,11 @@
       <button class="qr-close-btn" id="qrCloseBtn">✓ Done scanning</button>
       <div class="qr-status" id="qrStatus">Starting camera…</div>
     </div>
-    <div class="order-input-row">
-      <input class="order-input" type="number" id="orderInput"
-             placeholder="or type order no…" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-      <button class="lookup-btn" id="lookupBtn">Look up →</button>
-    </div>
-    <div class="tag-hint">Scan QR or type order number, then tap Look up.</div>
+        <input class="order-input" type="number" id="orderInput"
+           placeholder="Type order number…" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+           style="width:100%; margin-bottom:10px;">
+    <button class="lookup-btn" id="lookupBtn" style="width:100%; padding:16px; font-size:16px;">Look up order →</button>
+    <div class="tag-hint" style="margin-top:8px;">Type order number → tap Look up or press Enter.</div>
   </div>
 
   <!-- ── ORDER DETAIL + WEIGHT CARD ── -->
