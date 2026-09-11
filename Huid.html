@@ -4,182 +4,176 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>HUID Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{
-    --gold:#B8975A; --gold-light:#D4B483; --gold-dark:#8C6F3E;
-    --ink:#1A1A1A; --ink-muted:#5A5A5A; --ink-faint:#9A9A9A;
-    --surface:#FAFAF8; --surface-alt:#F3F1EC;
-    --border:rgba(184,151,90,0.2); --border-strong:rgba(184,151,90,0.45);
-    --success:#2E6B4F; --error:#8B2E2E;
-    --bg:var(--surface); --card:#fff;
+    --gold:#B8975A;--gold-light:#D4B483;--gold-dark:#8C6F3E;
+    --ink:#1A1A1A;--ink-muted:#5A5A5A;--ink-faint:#9A9A9A;
+    --surface:#FAFAF8;--surface-alt:#F3F1EC;
+    --border:rgba(184,151,90,0.2);--border-strong:rgba(184,151,90,0.45);
+    --success:#2E6B4F;--error:#8B2E2E;--bg:var(--surface);--card:#fff;
   }
   body{
-    font-family:'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;
-    background:var(--bg); color:var(--ink); min-height:100vh;
-    padding:16px; padding-bottom:80px;
-    -webkit-tap-highlight-color:transparent;
-    -webkit-text-size-adjust:100%;
+    font-family:'DM Sans',-apple-system,sans-serif;
+    background:var(--bg);color:var(--ink);min-height:100vh;
+    padding:16px;padding-bottom:80px;
+    -webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;
   }
   body::before{
-    content:''; position:fixed; inset:0;
-    background-image:linear-gradient(rgba(184,151,90,0.04) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(184,151,90,0.04) 1px, transparent 1px);
-    background-size:40px 40px; pointer-events:none; z-index:0;
+    content:'';position:fixed;inset:0;
+    background-image:linear-gradient(rgba(184,151,90,0.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(184,151,90,0.04) 1px,transparent 1px);
+    background-size:40px 40px;pointer-events:none;z-index:0;
   }
-  .page{position:relative; z-index:1; max-width:480px; margin:0 auto;}
-  .brand{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+  .page{position:relative;z-index:1;max-width:480px;margin:0 auto;}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
   .monogram{
-    width:42px; height:42px; border-radius:50%;
-    background:linear-gradient(135deg, #B8975A, #8C6F3E);
-    display:flex; align-items:center; justify-content:center;
-    font-family:'DM Serif Display',serif; color:#fff; font-size:17px; flex-shrink:0;
+    width:42px;height:42px;border-radius:50%;
+    background:linear-gradient(135deg,#B8975A,#8C6F3E);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'DM Serif Display',serif;color:#fff;font-size:17px;flex-shrink:0;
     box-shadow:0 2px 6px rgba(184,151,90,0.3);
   }
-  .brand h1{font-family:'DM Serif Display',serif; font-size:18px; font-weight:400; color:var(--ink);}
-  .brand p{font-size:11px; color:var(--ink-faint); margin-top:1px;}
+  .brand h1{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;color:var(--ink);}
+  .brand p{font-size:11px;color:var(--ink-faint);margin-top:1px;}
   .card{
-    background:var(--card); border:1px solid var(--border); border-radius:20px;
-    padding:22px; margin-bottom:16px; position:relative;
-    box-shadow:0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05);
+    background:var(--card);border:1px solid var(--border);border-radius:20px;
+    padding:22px;margin-bottom:16px;position:relative;
+    box-shadow:0 1px 2px rgba(0,0,0,0.04),0 4px 16px rgba(0,0,0,0.05);
   }
   .card::before{
-    content:''; position:absolute; top:0; left:24px; right:24px; height:3px;
-    background:linear-gradient(90deg, transparent, var(--gold), transparent);
+    content:'';position:absolute;top:0;left:24px;right:24px;height:3px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
     border-radius:0 0 3px 3px;
   }
-  .section-label{
-    font-size:11px; color:var(--ink-muted); text-transform:uppercase;
-    letter-spacing:0.08em; font-weight:600; margin-bottom:10px;
-  }
+  .section-label{font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:10px;}
   .qr-scan-btn{
-    display:flex; align-items:center; justify-content:center; gap:10px;
-    width:100%; padding:16px; border-radius:14px; margin-bottom:14px;
-    background:var(--surface-alt); border:2px dashed var(--border-strong);
-    color:var(--ink-muted); font-size:15px; font-weight:600;
-    cursor:pointer; user-select:none; transition:background 0.15s;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    width:100%;padding:16px;border-radius:14px;margin-bottom:14px;
+    background:var(--surface-alt);border:2px dashed var(--border-strong);
+    color:var(--ink-muted);font-size:15px;font-weight:600;
+    cursor:pointer;user-select:none;transition:background 0.15s;
   }
   .qr-scan-btn:active{background:var(--border);}
-  .qr-icon{font-size:24px;}
   #qrViewport{
-    display:none; position:relative; width:100%;
-    aspect-ratio:1/1; border-radius:14px; overflow:hidden;
-    background:#000; margin-bottom:14px;
+    display:none;position:relative;width:100%;aspect-ratio:1/1;
+    border-radius:14px;overflow:hidden;background:#000;margin-bottom:14px;
     border:2px solid var(--border-strong);
   }
-  #qrVideo{width:100%; height:100%; object-fit:cover; display:block;}
-  .qr-corners{position:absolute; inset:0; pointer-events:none;}
+  #qrVideo{width:100%;height:100%;object-fit:cover;display:block;}
+  .qr-corners{position:absolute;inset:0;pointer-events:none;}
   .qr-close-btn{
-    position:absolute; top:10px; right:10px;
-    background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
-    color:#fff; border:none; border-radius:20px;
-    padding:6px 14px; font-size:13px; font-weight:600;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
+    position:absolute;top:10px;right:10px;
+    background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);
+    color:#fff;border:none;border-radius:20px;
+    padding:6px 14px;font-size:13px;font-weight:600;
+    cursor:pointer;font-family:'DM Sans',sans-serif;
   }
   .qr-status{
-    position:absolute; bottom:0; left:0; right:0;
-    background:linear-gradient(transparent, rgba(0,0,0,0.65));
-    color:rgba(255,255,255,0.85); text-align:center;
-    font-size:13px; padding:18px 12px 14px; font-weight:500;
+    position:absolute;bottom:0;left:0;right:0;
+    background:linear-gradient(transparent,rgba(0,0,0,0.65));
+    color:rgba(255,255,255,0.85);text-align:center;
+    font-size:13px;padding:18px 12px 14px;font-weight:500;
   }
-  .order-input{
-    width:100%; background:var(--surface-alt); border:2px solid var(--border-strong);
-    border-radius:14px; padding:14px 16px;
-    font-size:22px; font-family:'DM Serif Display',serif;
-    color:var(--ink); outline:none; letter-spacing:1px;
+
+  /* Tag input */
+  .tag-input-wrap{
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+    background:var(--surface-alt);border:2px solid var(--border-strong);
+    border-radius:14px;padding:10px 12px;min-height:52px;cursor:text;
     transition:border-color 0.15s;
   }
-  .order-input:focus{border-color:var(--gold);}
-  .order-input::placeholder{color:var(--ink-faint); font-family:'DM Sans',sans-serif; font-size:14px; letter-spacing:0;}
-  .lookup-btn{
-    width:100%; padding:16px; border-radius:14px; border:none;
-    background:var(--surface-alt); border:2px solid var(--border-strong);
-    color:var(--ink); font-size:15px; font-weight:600; margin-top:12px;
-    cursor:pointer; touch-action:manipulation;
+  .tag-input-wrap:focus-within{border-color:var(--gold);}
+  .tag{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--gold);color:#fff;
+    font-size:14px;font-weight:700;font-family:'DM Serif Display',serif;
+    padding:5px 10px;border-radius:8px;letter-spacing:0.5px;
   }
-  .lookup-btn:active{background:var(--border);}
-
-  /* Order detail card */
-  .order-detail-row{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);}
-  .order-detail-row:last-child{border-bottom:none;}
-  .order-detail-label{font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.06em;}
-  .order-detail-value{font-size:14px; font-weight:600; color:var(--ink); font-family:'DM Serif Display',serif;}
+  .tag-x{
+    font-size:16px;line-height:1;cursor:pointer;opacity:0.8;
+    font-family:'DM Sans',sans-serif;font-weight:400;
+  }
+  .tag-x:hover{opacity:1;}
+  #tagInput{
+    border:none;outline:none;background:transparent;
+    font-size:18px;font-family:'DM Serif Display',serif;
+    color:var(--ink);min-width:120px;flex:1;padding:2px 0;
+  }
+  #tagInput::placeholder{color:var(--ink-faint);font-family:'DM Sans',sans-serif;font-size:14px;}
+  .hint{font-size:12px;color:var(--ink-faint);margin-top:8px;}
 
   /* Form fields */
-  .field-label{font-size:11px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; margin-bottom:6px; margin-top:16px; display:block;}
+  .field-label{font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:6px;margin-top:16px;display:block;}
   .field-label:first-child{margin-top:0;}
   .field-input{
-    width:100%; background:var(--surface-alt); border:2px solid var(--border-strong);
-    border-radius:12px; padding:12px 14px;
-    font-size:16px; font-family:'DM Sans',sans-serif;
-    color:var(--ink); outline:none;
-    transition:border-color 0.15s;
+    width:100%;background:var(--surface-alt);border:2px solid var(--border-strong);
+    border-radius:12px;padding:12px 14px;font-size:16px;font-family:'DM Sans',sans-serif;
+    color:var(--ink);outline:none;transition:border-color 0.15s;
   }
   .field-input:focus{border-color:var(--gold);}
   .file-upload{
-    width:100%; padding:14px; border-radius:12px;
-    background:var(--surface-alt); border:2px dashed var(--border-strong);
-    color:var(--ink-muted); font-size:14px; font-weight:500;
-    cursor:pointer; text-align:center;
+    width:100%;padding:14px;border-radius:12px;display:block;
+    background:var(--surface-alt);border:2px dashed var(--border-strong);
+    color:var(--ink-muted);font-size:14px;font-weight:500;
+    cursor:pointer;text-align:center;margin-bottom:4px;
   }
-  .file-name{font-size:12px; color:var(--success); margin-top:6px; font-weight:600;}
+  .file-name{font-size:12px;color:var(--success);margin-top:6px;font-weight:600;}
 
   /* Checkboxes */
   .check-row{
-    display:flex; align-items:center; gap:12px;
-    padding:12px 14px; border-radius:12px; margin-top:8px;
-    background:var(--surface-alt); border:1.5px solid var(--border);
-    cursor:pointer; user-select:none; transition:border-color 0.15s;
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;border-radius:12px;margin-top:8px;
+    background:var(--surface-alt);border:1.5px solid var(--border);
+    cursor:pointer;user-select:none;transition:border-color 0.15s;
   }
-  .check-row.checked{border-color:var(--gold); background:#fff;}
+  .check-row.checked{border-color:var(--gold);background:#fff;}
   .check-box{
-    width:22px; height:22px; border-radius:6px; flex-shrink:0;
-    border:2px solid var(--border-strong); background:#fff;
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px; transition:all 0.15s;
+    width:22px;height:22px;border-radius:6px;flex-shrink:0;
+    border:2px solid var(--border-strong);background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;transition:all 0.15s;
   }
-  .check-row.checked .check-box{background:var(--gold); border-color:var(--gold); color:#fff;}
-  .check-label{font-size:13px; color:var(--ink); font-weight:500; line-height:1.3;}
+  .check-row.checked .check-box{background:var(--gold);border-color:var(--gold);color:#fff;}
+  .check-label{font-size:13px;color:var(--ink);font-weight:500;line-height:1.3;}
 
   .done-btn{
-    width:100%; padding:20px; border-radius:14px; border:none;
-    background:linear-gradient(135deg, #B8975A, #8C6F3E);
-    color:#fff; font-size:18px; font-weight:700; margin-top:6px;
-    box-shadow:0 4px 14px rgba(184,151,90,0.4); cursor:pointer;
-    letter-spacing:0.02em; touch-action:manipulation; min-height:60px;
+    width:100%;padding:20px;border-radius:14px;border:none;
+    background:linear-gradient(135deg,#B8975A,#8C6F3E);
+    color:#fff;font-size:18px;font-weight:700;margin-top:6px;
+    box-shadow:0 4px 14px rgba(184,151,90,0.4);cursor:pointer;
+    letter-spacing:0.02em;touch-action:manipulation;min-height:60px;
   }
-  .done-btn:active{opacity:0.88; transform:scale(0.98);}
-  .done-btn:disabled{opacity:0.5; transform:none; cursor:not-allowed;}
+  .done-btn:active{opacity:0.88;transform:scale(0.98);}
+  .done-btn:disabled{opacity:0.5;transform:none;cursor:not-allowed;}
 
-  .sub-line{font-size:12px; color:var(--ink-faint); margin-bottom:18px;}
-  .sub-line span{text-decoration:underline; cursor:pointer; color:var(--gold-dark); font-weight:600;}
+  .sub-line{font-size:12px;color:var(--ink-faint);margin-bottom:18px;}
+  .sub-line span{text-decoration:underline;cursor:pointer;color:var(--gold-dark);font-weight:600;}
   .setup-overlay{
-    position:fixed; inset:0; background:var(--bg);
-    display:flex; flex-direction:column; justify-content:center; padding:28px; z-index:99;
+    position:fixed;inset:0;background:var(--bg);
+    display:flex;flex-direction:column;justify-content:center;padding:28px;z-index:99;
   }
-  .setup-overlay h2{font-family:'DM Serif Display',serif; font-size:22px; color:var(--ink); margin-bottom:6px;}
-  .setup-overlay p{color:var(--ink-faint); font-size:13px; margin-bottom:22px;}
-  .setup-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .setup-overlay h2{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink);margin-bottom:6px;}
+  .setup-overlay p{color:var(--ink-faint);font-size:13px;margin-bottom:22px;}
+  .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .chip{
-    text-align:center; padding:20px 8px; border-radius:12px; font-size:16px; font-weight:600;
-    border:1.5px solid var(--border); background:var(--card); color:var(--ink);
-    cursor:pointer; user-select:none; touch-action:manipulation;
-    min-height:64px; display:flex; align-items:center; justify-content:center;
+    text-align:center;padding:20px 8px;border-radius:12px;font-size:16px;font-weight:600;
+    border:1.5px solid var(--border);background:var(--card);color:var(--ink);
+    cursor:pointer;user-select:none;touch-action:manipulation;
+    min-height:64px;display:flex;align-items:center;justify-content:center;
   }
   .chip:active{background:var(--surface-alt);}
   .toast{
-    position:fixed; top:18px; left:18px; right:18px;
-    padding:13px; border-radius:12px; text-align:center; font-size:14px; font-weight:600;
-    opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:50;
+    position:fixed;top:18px;left:18px;right:18px;
+    padding:13px;border-radius:12px;text-align:center;font-size:14px;font-weight:600;
+    opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:50;
     box-shadow:0 4px 16px rgba(0,0,0,0.15);
   }
-  .toast.success{background:var(--success); color:#fff;}
-  .toast.fail{background:var(--error); color:#fff;}
+  .toast.success{background:var(--success);color:#fff;}
+  .toast.fail{background:var(--error);color:#fff;}
   .toast.show{opacity:1;}
-  #detailSection{display:none;}
   #formSection{display:none;}
 </style>
 </head>
@@ -193,7 +187,7 @@
   <div class="setup-grid" id="setupGrid"></div>
 </div>
 
-<div class="page" id="mainApp">
+<div class="page">
   <div class="brand">
     <div class="monogram">💎</div>
     <div>
@@ -205,9 +199,9 @@
 
   <!-- Scan card -->
   <div class="card">
-    <div class="section-label">Scan or Type Order Number</div>
+    <div class="section-label">Scan or Type Order Numbers</div>
     <div class="qr-scan-btn" id="qrScanBtn">
-      <span class="qr-icon">📷</span>
+      <span style="font-size:24px;">📷</span>
       <span>Tap to scan QR code</span>
     </div>
     <div id="qrViewport">
@@ -221,15 +215,10 @@
       <button class="qr-close-btn" id="qrCloseBtn">✓ Done scanning</button>
       <div class="qr-status" id="qrStatus">Starting camera…</div>
     </div>
-    <input class="order-input" type="number" id="orderInput"
-           placeholder="Type order number…" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-    <button class="lookup-btn" id="lookupBtn">Look Up Order →</button>
-  </div>
-
-  <!-- Order detail card -->
-  <div class="card" id="detailSection">
-    <div class="section-label">Order Details</div>
-    <div id="orderDetailRows"></div>
+    <div class="tag-input-wrap" id="tagWrap" onclick="document.getElementById('tagInput').focus()">
+      <input id="tagInput" type="number" inputmode="numeric" placeholder="or type here…" autocomplete="off">
+    </div>
+    <div class="hint">Scan a QR OR type a number → Enter / Space to add.</div>
   </div>
 
   <!-- Form card -->
@@ -243,12 +232,11 @@
     <input class="field-input" type="number" id="wastage" placeholder="e.g. 0.10" step="0.01" value="0" inputmode="decimal">
 
     <label class="field-label" style="margin-top:20px;">HUID Image</label>
-    <label class="file-upload" for="huidImage" style="display:block; margin-bottom:16px;">📎 Tap to attach image</label>
+    <label class="file-upload" for="huidImage">📎 Tap to attach image</label>
     <input type="file" id="huidImage" accept="image/*" style="display:none" onchange="showFileName(this)">
     <div class="file-name" id="fileName"></div>
 
     <label class="field-label" style="margin-top:20px;">Confirmations</label>
-
     <div class="check-row" id="row_crossCheck" onclick="toggleCheck('crossCheck')">
       <div class="check-box" id="box_crossCheck"></div>
       <div class="check-label">Cross-Check Item Detail confirmed</div>
@@ -273,7 +261,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 <script>
 (function() {
-    var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/brahammandjewels.com/s/AKfycbwaBd1DOgSQmWMSoLFAHPyhnjFICEXJC4-e18IuAHQMkF7iDX5Z4ZLYKG-jIv6t3yqD/exec';
+  var APPS_SCRIPT_URL = 'https://script.google.com/a/macros/brahammandjewels.com/s/AKfycbwaBd1DOgSQmWMSoLFAHPyhnjFICEXJC4-e18IuAHQMkF7iDX5Z4ZLYKG-jIv6t3yqD/exec';
   var TEAM = [
     { code: 'MR', name: 'Mr Sir' },
     { code: 'RJ', name: 'Raj' },
@@ -281,7 +269,7 @@
     { code: 'HS', name: 'Harsh' }
   ];
   var USER_KEY = 'huid_device_user_v1';
-  var currentOrder = null;
+  var orders = [];
   var checks = { crossCheck: false, laserMarking: false, accountsChitti: false, orderComplete: false };
 
   // ── User setup ──
@@ -317,6 +305,49 @@
     setTimeout(function(){ t.classList.remove('show'); }, 2500);
   }
 
+  // ── Tags ──
+  function addOrder(num) {
+    num = String(num).trim();
+    if (!num) return;
+    if (orders.indexOf(num) !== -1) { showToast(num + ' already added', 'fail'); return; }
+    orders.push(num);
+    renderTags();
+    document.getElementById('tagInput').value = '';
+    document.getElementById('formSection').style.display = 'block';
+  }
+
+  function removeOrder(num) {
+    orders = orders.filter(function(o){ return o !== num; });
+    renderTags();
+    if (orders.length === 0) document.getElementById('formSection').style.display = 'none';
+  }
+
+  function renderTags() {
+    var wrap = document.getElementById('tagWrap');
+    var input = document.getElementById('tagInput');
+    // remove old tags
+    wrap.querySelectorAll('.tag').forEach(function(el){ el.remove(); });
+    orders.forEach(function(num) {
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.innerHTML = num + ' <span class="tag-x" onclick="removeOrderTag(\'' + num + '\')">×</span>';
+      wrap.insertBefore(tag, input);
+    });
+  }
+
+  window.removeOrderTag = function(num) { removeOrder(num); };
+
+  document.getElementById('tagInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      var val = this.value.trim();
+      if (val) addOrder(val);
+    }
+    if (e.key === 'Backspace' && this.value === '' && orders.length > 0) {
+      removeOrder(orders[orders.length - 1]);
+    }
+  });
+
   // ── QR Scanner ──
   var qrStream = null, qrControls = null, codeReader = null;
   function stopCamera() {
@@ -337,22 +368,9 @@
       if (result) {
         var num = result.getText().replace(/\D/g, '');
         if (num) {
-        document.getElementById('orderInput').value = num;
           if (navigator.vibrate) navigator.vibrate(60);
-                    document.getElementById('qrStatus').textContent = '✓ ' + num + ' — looking up…';
-          stopCamera();
-          var secs = 3;
-          countdownEl.textContent = 'Looking up in ' + secs + '…';
-          countdownEl.style.display = 'block';
-          countdownInterval = setInterval(function() {
-            secs--;
-            if (secs <= 0) { clearInterval(countdownInterval); return; }
-            countdownEl.textContent = 'Looking up in ' + secs + '…';
-          }, 1000);
-          typingTimer = setTimeout(function() {
-            clearCountdown();
-            document.getElementById('lookupBtn').click();
-          }, 3000);
+          document.getElementById('qrStatus').textContent = '✓ ' + num + ' added';
+          addOrder(num);
         }
       } else if (err && !(err instanceof ZXing.NotFoundException)) {
         document.getElementById('qrStatus').textContent = 'Error: ' + err.message;
@@ -365,80 +383,6 @@
     })
     .catch(function(err) { stopCamera(); showToast('Camera error: ' + (err.name || err.message), 'fail'); });
   });
-
-      var typingTimer = null;
-  var countdownInterval = null;
-  var countdownEl = document.createElement('div');
-  countdownEl.style.cssText = 'display:none;margin-top:8px;text-align:center;font-size:13px;font-weight:700;color:var(--gold-dark);letter-spacing:0.05em;';
-  document.getElementById('orderInput').insertAdjacentElement('afterend', countdownEl);
-
-    window.clearCountdown = function clearCountdown() {
-    clearTimeout(typingTimer);
-    clearInterval(countdownInterval);
-    countdownEl.style.display = 'none';
-    countdownEl.textContent = '';
-  }
-
-  document.getElementById('orderInput').addEventListener('input', function() {
-    clearCountdown();
-    if (!this.value.trim()) return;
-    var secs = 3;
-    countdownEl.innerHTML = 'Looking up in ' + secs + '… <span onclick="clearCountdown()" style="margin-left:8px;cursor:pointer;color:var(--error);font-size:12px;">✕ cancel</span>';
-    countdownEl.style.display = 'block';
-    countdownInterval = setInterval(function() {
-      secs--;
-      if (secs <= 0) { clearInterval(countdownInterval); return; }
-            countdownEl.innerHTML = 'Looking up in ' + secs + '… <span onclick="clearCountdown()" style="margin-left:8px;cursor:pointer;color:var(--error);font-size:12px;">✕ cancel</span>';
-    }, 1000);
-    typingTimer = setTimeout(function() {
-      clearCountdown();
-      document.getElementById('lookupBtn').click();
-    }, 3000);
-  });
-
-  // ── Lookup ──
-  document.getElementById('lookupBtn').addEventListener('click', function() {
-    var u = getUser();
-    if (!u) { document.getElementById('setupOverlay').style.display = 'flex'; return; }
-    var orderNo = document.getElementById('orderInput').value.trim();
-    if (!orderNo) { showToast('Enter an order number', 'fail'); return; }
-    stopCamera();
-    document.getElementById('lookupBtn').textContent = 'Looking up…';
-    document.getElementById('lookupBtn').disabled = true;
-    document.getElementById('detailSection').style.display = 'none';
-    document.getElementById('formSection').style.display   = 'none';
-
-        fetch(APPS_SCRIPT_URL + '?action=getHUIDOrder&orderNo=' + encodeURIComponent(orderNo))
-      .then(function(r){ return r.json(); })
-      .then(function(res) {
-        document.getElementById('lookupBtn').textContent = 'Look Up Order →';
-        document.getElementById('lookupBtn').disabled = false;
-        if (res.status === 'not_found')    { showToast('Order not found', 'fail'); return; }
-        if (res.status === 'not_ready')    { showToast('Packing not done yet', 'fail'); return; }
-        if (res.status === 'already_done') { showToast('Already marked HUID Done', 'fail'); return; }
-        if (res.status === 'error')        { showToast('Error: ' + res.message, 'fail'); return; }
-
-        currentOrder = res;
-        document.getElementById('orderDetailRows').innerHTML =
-          detailRow('Order No', res.orderNo) +
-          detailRow('Company', res.company || '—') +
-          detailRow('Melting', res.melting || '—') +
-          detailRow('EDOD', res.edod || '—');
-        document.getElementById('detailSection').style.display = 'block';
-        document.getElementById('formSection').style.display   = 'block';
-        resetForm();
-      })
-                  .catch(function(e) {
-        document.getElementById('lookupBtn').textContent = 'Look Up Order →';
-        document.getElementById('lookupBtn').disabled = false;
-        showToast('Error: ' + e.message, 'fail');
-      });
-  });  // closes addEventListener
-
-  function detailRow(label, value) {
-    return '<div class="order-detail-row"><span class="order-detail-label">' + label +
-           '</span><span class="order-detail-value">' + value + '</span></div>';
-  }
 
   // ── Checkboxes ──
   window.toggleCheck = function(key) {
@@ -454,7 +398,10 @@
     document.getElementById('fileName').textContent = input.files[0] ? '📎 ' + input.files[0].name : '';
   };
 
-  function resetForm() {
+  function resetAll() {
+    orders = [];
+    renderTags();
+    document.getElementById('formSection').style.display = 'none';
     document.getElementById('netWeight').value = '';
     document.getElementById('wastage').value   = '0';
     document.getElementById('huidImage').value = '';
@@ -468,56 +415,59 @@
 
   // ── Submit ──
   document.getElementById('doneBtn').addEventListener('click', function() {
-    if (!currentOrder) return;
+    if (orders.length === 0) { showToast('Add at least one order', 'fail'); return; }
     if (!checks.crossCheck)     { showToast('Confirm Cross-Check first', 'fail'); return; }
     if (!checks.accountsChitti) { showToast('Confirm Accounts Chitti first', 'fail'); return; }
     var netWeight = document.getElementById('netWeight').value;
     if (!netWeight || parseFloat(netWeight) <= 0) { showToast('Enter net weight', 'fail'); return; }
+    var u = getUser();
+    if (!u) { document.getElementById('setupOverlay').style.display = 'flex'; return; }
 
     var file = document.getElementById('huidImage').files[0];
     document.getElementById('doneBtn').disabled = true;
     document.getElementById('doneBtn').textContent = 'Submitting…';
 
     function doSubmit(imageBase64, imageName, imageMime) {
-        var payload = {
-        processes:      ['HUIDDone'],
-        orderNo:        currentOrder.orderNo,
-        scannedBy:      getUser().name,
-        netWeight:      netWeight,
-        wastage:        document.getElementById('wastage').value || 0,
-        imageBase64:    imageBase64 || '',
-        imageName:      imageName   || '',
-        imageMime:      imageMime   || '',
-        crossCheck:     checks.crossCheck,
-        laserMarking:   checks.laserMarking,
-        accountsChitti: checks.accountsChitti,
-        orderComplete:  checks.orderComplete,
-      };
-                  fetch(APPS_SCRIPT_URL, {
+      var payload = orders.map(function(orderNo) {
+        return {
+          processes:      ['HUIDDone'],
+          orderNo:        orderNo,
+          scannedBy:      u.name,
+          netWeight:      netWeight,
+          wastage:        document.getElementById('wastage').value || 0,
+          imageBase64:    imageBase64 || '',
+          imageName:      imageName   || '',
+          imageMime:      imageMime   || '',
+          crossCheck:     checks.crossCheck,
+          laserMarking:   checks.laserMarking,
+          accountsChitti: checks.accountsChitti,
+          orderComplete:  checks.orderComplete
+        };
+      });
+
+      fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
       })
-        .then(function(r){ return r.json(); })
-        .then(function(res) {
-          document.getElementById('doneBtn').disabled = false;
-          document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
-           if (res.status === 'ok' || (res.results && res.results[0] && res.results[0].status === 'done')) {
-            showToast('💎 HUID Done — ' + currentOrder.orderNo, 'success');
-            document.getElementById('orderInput').value = '';
-            document.getElementById('detailSection').style.display = 'none';
-            document.getElementById('formSection').style.display   = 'none';
-            currentOrder = null;
-          } else {
-            showToast('Error: ' + (res.message || res.status), 'fail');
-          }
-        })
-                .catch(function(e) {
-          document.getElementById('doneBtn').disabled = false;
-          document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
-          showToast('Error: ' + e.message, 'fail');
-        });
-        
+      .then(function(r){ return r.json(); })
+      .then(function(res) {
+        document.getElementById('doneBtn').disabled = false;
+        document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
+        var allDone = res.results && res.results.every(function(r){ return r.status === 'done'; });
+        if (allDone) {
+          showToast('💎 HUID Done — ' + orders.join(', '), 'success');
+          resetAll();
+        } else {
+          var errors = (res.results || []).filter(function(r){ return r.status !== 'done'; });
+          showToast('Error: ' + (errors[0] && errors[0].message || 'unknown'), 'fail');
+        }
+      })
+      .catch(function(e) {
+        document.getElementById('doneBtn').disabled = false;
+        document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
+        showToast('Error: ' + e.message, 'fail');
+      });
     }
 
     if (file) {
