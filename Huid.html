@@ -501,7 +501,7 @@
         .then(function(res) {
           document.getElementById('doneBtn').disabled = false;
           document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
-          if (res.status === 'done') {
+           if (res.status === 'ok' || (res.results && res.results[0] && res.results[0].status === 'done')) {
             showToast('💎 HUID Done — ' + currentOrder.orderNo, 'success');
             document.getElementById('orderInput').value = '';
             document.getElementById('detailSection').style.display = 'none';
