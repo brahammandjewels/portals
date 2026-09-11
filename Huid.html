@@ -493,8 +493,9 @@
         accountsChitti: checks.accountsChitti,
         orderComplete:  checks.orderComplete,
       };
-            fetch(APPS_SCRIPT_URL, {
+                  fetch(APPS_SCRIPT_URL, {
         method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
       })
         .then(function(r){ return r.json(); })
