@@ -337,9 +337,11 @@
       if (result) {
         var num = result.getText().replace(/\D/g, '');
         if (num) {
-          document.getElementById('orderInput').value = num;
+        document.getElementById('orderInput').value = num;
           if (navigator.vibrate) navigator.vibrate(60);
-          document.getElementById('qrStatus').textContent = '✓ ' + num + ' — tap Done scanning';
+          document.getElementById('qrStatus').textContent = '✓ ' + num + ' — looking up…';
+          stopCamera();
+          document.getElementById('lookupBtn').click();
         }
       } else if (err && !(err instanceof ZXing.NotFoundException)) {
         document.getElementById('qrStatus').textContent = 'Error: ' + err.message;
@@ -353,6 +355,15 @@
     .catch(function(err) { stopCamera(); showToast('Camera error: ' + (err.name || err.message), 'fail'); });
   });
 
+    var typingTimer = null;
+  document.getElementById('orderInput').addEventListener('input', function() {
+    clearTimeout(typingTimer);
+    if (!this.value.trim()) return;
+    typingTimer = setTimeout(function() {
+      document.getElementById('lookupBtn').click();
+    }, 3000);
+  });
+  
   // ── Lookup ──
   document.getElementById('lookupBtn').addEventListener('click', function() {
     var u = getUser();
