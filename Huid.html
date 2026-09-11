@@ -385,11 +385,12 @@
         document.getElementById('formSection').style.display   = 'block';
         resetForm();
       })
-            .catch(function(e) {
+                  .catch(function(e) {
         document.getElementById('lookupBtn').textContent = 'Look Up Order →';
         document.getElementById('lookupBtn').disabled = false;
         showToast('Error: ' + e.message, 'fail');
       });
+  });  // closes addEventListener
 
   function detailRow(label, value) {
     return '<div class="order-detail-row"><span class="order-detail-label">' + label +
