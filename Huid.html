@@ -1,184 +1,484 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HUID Scan Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>HUID Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: sans-serif; background: #f4f4f4; padding: 16px; }
-  h2 { text-align: center; margin-bottom: 16px; font-size: 18px; color: #222; }
-  .card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-  label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
-  input[type=text], input[type=number], input[type=file] {
-    width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;
-    font-size: 15px; margin-bottom: 12px;
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --gold:#B8975A; --gold-light:#D4B483; --gold-dark:#8C6F3E;
+    --ink:#1A1A1A; --ink-muted:#5A5A5A; --ink-faint:#9A9A9A;
+    --surface:#FAFAF8; --surface-alt:#F3F1EC;
+    --border:rgba(184,151,90,0.2); --border-strong:rgba(184,151,90,0.45);
+    --success:#2E6B4F; --error:#8B2E2E;
+    --bg:var(--surface); --card:#fff;
   }
-  .order-info { font-size: 13px; line-height: 1.8; }
-  .order-info span { font-weight: 700; color: #222; }
-  .checkbox-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 14px; }
-  .checkbox-row input[type=checkbox] { width: 18px; height: 18px; }
-  button { width: 100%; padding: 14px; border: none; border-radius: 8px;
-    font-size: 16px; font-weight: 700; cursor: pointer; }
-  #scanBtn  { background: #222; color: #fff; }
-  #submitBtn { background: #4caf50; color: #fff; display: none; margin-top: 8px; }
-  #msg { text-align: center; margin-top: 12px; font-size: 14px; font-weight: 600; }
-  .red  { color: #e53935; }
-  .green { color: #4caf50; }
-  #formSection { display: none; }
-  .tag { display: inline-block; background: #eee; border-radius: 4px;
-    padding: 2px 8px; font-size: 12px; font-weight: 700; margin-right: 4px; }
+  body{
+    font-family:'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh;
+    padding:16px; padding-bottom:80px;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-text-size-adjust:100%;
+  }
+  body::before{
+    content:''; position:fixed; inset:0;
+    background-image:linear-gradient(rgba(184,151,90,0.04) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(184,151,90,0.04) 1px, transparent 1px);
+    background-size:40px 40px; pointer-events:none; z-index:0;
+  }
+  .page{position:relative; z-index:1; max-width:480px; margin:0 auto;}
+  .brand{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+  .monogram{
+    width:42px; height:42px; border-radius:50%;
+    background:linear-gradient(135deg, #B8975A, #8C6F3E);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'DM Serif Display',serif; color:#fff; font-size:17px; flex-shrink:0;
+    box-shadow:0 2px 6px rgba(184,151,90,0.3);
+  }
+  .brand h1{font-family:'DM Serif Display',serif; font-size:18px; font-weight:400; color:var(--ink);}
+  .brand p{font-size:11px; color:var(--ink-faint); margin-top:1px;}
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:20px;
+    padding:22px; margin-bottom:16px; position:relative;
+    box-shadow:0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05);
+  }
+  .card::before{
+    content:''; position:absolute; top:0; left:24px; right:24px; height:3px;
+    background:linear-gradient(90deg, transparent, var(--gold), transparent);
+    border-radius:0 0 3px 3px;
+  }
+  .section-label{
+    font-size:11px; color:var(--ink-muted); text-transform:uppercase;
+    letter-spacing:0.08em; font-weight:600; margin-bottom:10px;
+  }
+  .qr-scan-btn{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    width:100%; padding:16px; border-radius:14px; margin-bottom:14px;
+    background:var(--surface-alt); border:2px dashed var(--border-strong);
+    color:var(--ink-muted); font-size:15px; font-weight:600;
+    cursor:pointer; user-select:none; transition:background 0.15s;
+  }
+  .qr-scan-btn:active{background:var(--border);}
+  .qr-icon{font-size:24px;}
+  #qrViewport{
+    display:none; position:relative; width:100%;
+    aspect-ratio:1/1; border-radius:14px; overflow:hidden;
+    background:#000; margin-bottom:14px;
+    border:2px solid var(--border-strong);
+  }
+  #qrVideo{width:100%; height:100%; object-fit:cover; display:block;}
+  .qr-corners{position:absolute; inset:0; pointer-events:none;}
+  .qr-close-btn{
+    position:absolute; top:10px; right:10px;
+    background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+    color:#fff; border:none; border-radius:20px;
+    padding:6px 14px; font-size:13px; font-weight:600;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+  }
+  .qr-status{
+    position:absolute; bottom:0; left:0; right:0;
+    background:linear-gradient(transparent, rgba(0,0,0,0.65));
+    color:rgba(255,255,255,0.85); text-align:center;
+    font-size:13px; padding:18px 12px 14px; font-weight:500;
+  }
+  .order-input{
+    width:100%; background:var(--surface-alt); border:2px solid var(--border-strong);
+    border-radius:14px; padding:14px 16px;
+    font-size:22px; font-family:'DM Serif Display',serif;
+    color:var(--ink); outline:none; letter-spacing:1px;
+    transition:border-color 0.15s;
+  }
+  .order-input:focus{border-color:var(--gold);}
+  .order-input::placeholder{color:var(--ink-faint); font-family:'DM Sans',sans-serif; font-size:14px; letter-spacing:0;}
+  .lookup-btn{
+    width:100%; padding:16px; border-radius:14px; border:none;
+    background:var(--surface-alt); border:2px solid var(--border-strong);
+    color:var(--ink); font-size:15px; font-weight:600; margin-top:12px;
+    cursor:pointer; touch-action:manipulation;
+  }
+  .lookup-btn:active{background:var(--border);}
+
+  /* Order detail card */
+  .order-detail-row{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);}
+  .order-detail-row:last-child{border-bottom:none;}
+  .order-detail-label{font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.06em;}
+  .order-detail-value{font-size:14px; font-weight:600; color:var(--ink); font-family:'DM Serif Display',serif;}
+
+  /* Form fields */
+  .field-label{font-size:11px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; margin-bottom:6px; margin-top:16px; display:block;}
+  .field-label:first-child{margin-top:0;}
+  .field-input{
+    width:100%; background:var(--surface-alt); border:2px solid var(--border-strong);
+    border-radius:12px; padding:12px 14px;
+    font-size:16px; font-family:'DM Sans',sans-serif;
+    color:var(--ink); outline:none;
+    transition:border-color 0.15s;
+  }
+  .field-input:focus{border-color:var(--gold);}
+  .file-upload{
+    width:100%; padding:14px; border-radius:12px;
+    background:var(--surface-alt); border:2px dashed var(--border-strong);
+    color:var(--ink-muted); font-size:14px; font-weight:500;
+    cursor:pointer; text-align:center;
+  }
+  .file-name{font-size:12px; color:var(--success); margin-top:6px; font-weight:600;}
+
+  /* Checkboxes */
+  .check-row{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; border-radius:12px; margin-top:8px;
+    background:var(--surface-alt); border:1.5px solid var(--border);
+    cursor:pointer; user-select:none; transition:border-color 0.15s;
+  }
+  .check-row.checked{border-color:var(--gold); background:#fff;}
+  .check-box{
+    width:22px; height:22px; border-radius:6px; flex-shrink:0;
+    border:2px solid var(--border-strong); background:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; transition:all 0.15s;
+  }
+  .check-row.checked .check-box{background:var(--gold); border-color:var(--gold); color:#fff;}
+  .check-label{font-size:13px; color:var(--ink); font-weight:500; line-height:1.3;}
+
+  .done-btn{
+    width:100%; padding:20px; border-radius:14px; border:none;
+    background:linear-gradient(135deg, #B8975A, #8C6F3E);
+    color:#fff; font-size:18px; font-weight:700; margin-top:6px;
+    box-shadow:0 4px 14px rgba(184,151,90,0.4); cursor:pointer;
+    letter-spacing:0.02em; touch-action:manipulation; min-height:60px;
+  }
+  .done-btn:active{opacity:0.88; transform:scale(0.98);}
+  .done-btn:disabled{opacity:0.5; transform:none; cursor:not-allowed;}
+
+  .sub-line{font-size:12px; color:var(--ink-faint); margin-bottom:18px;}
+  .sub-line span{text-decoration:underline; cursor:pointer; color:var(--gold-dark); font-weight:600;}
+  .setup-overlay{
+    position:fixed; inset:0; background:var(--bg);
+    display:flex; flex-direction:column; justify-content:center; padding:28px; z-index:99;
+  }
+  .setup-overlay h2{font-family:'DM Serif Display',serif; font-size:22px; color:var(--ink); margin-bottom:6px;}
+  .setup-overlay p{color:var(--ink-faint); font-size:13px; margin-bottom:22px;}
+  .setup-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .chip{
+    text-align:center; padding:20px 8px; border-radius:12px; font-size:16px; font-weight:600;
+    border:1.5px solid var(--border); background:var(--card); color:var(--ink);
+    cursor:pointer; user-select:none; touch-action:manipulation;
+    min-height:64px; display:flex; align-items:center; justify-content:center;
+  }
+  .chip:active{background:var(--surface-alt);}
+  .toast{
+    position:fixed; top:18px; left:18px; right:18px;
+    padding:13px; border-radius:12px; text-align:center; font-size:14px; font-weight:600;
+    opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:50;
+    box-shadow:0 4px 16px rgba(0,0,0,0.15);
+  }
+  .toast.success{background:var(--success); color:#fff;}
+  .toast.fail{background:var(--error); color:#fff;}
+  .toast.show{opacity:1;}
+  #detailSection{display:none;}
+  #formSection{display:none;}
 </style>
 </head>
 <body>
-<h2>HUID Scan Portal</h2>
 
-<!-- Step 1: Scan -->
-<div class="card">
-  <label>Scanned By</label>
-  <input type="text" id="scannedBy" placeholder="Your name" />
-  <label>Order No.</label>
-  <input type="text" id="orderInput" placeholder="Scan or type order no." />
-  <button id="scanBtn" onclick="lookupOrder()">Lookup Order</button>
-  <div id="msg"></div>
+<div class="toast" id="toast"></div>
+
+<div class="setup-overlay" id="setupOverlay" style="display:none;">
+  <h2>Who are you?</h2>
+  <p>Pick your name — it stays saved on this device.</p>
+  <div class="setup-grid" id="setupGrid"></div>
 </div>
 
-<!-- Step 2: Order details + form -->
-<div id="formSection">
-  <div class="card order-info" id="orderDetails"></div>
+<div class="page" id="mainApp">
+  <div class="brand">
+    <div class="monogram">💎</div>
+    <div>
+      <h1>HUID</h1>
+      <p>Brahammand Jewels — Production Tracker</p>
+    </div>
+  </div>
+  <div class="sub-line">Logged in as: <b id="currentUser">—</b> · <span id="changeUser">change</span></div>
 
+  <!-- Scan card -->
   <div class="card">
-    <label>Net Weight (g)</label>
-    <input type="number" id="netWeight" placeholder="e.g. 5.25" step="0.01" />
-
-    <label>Wastage (g)</label>
-    <input type="number" id="wastage" placeholder="e.g. 0.10" step="0.01" value="0" />
-
-    <label>HUID Image</label>
-    <input type="file" id="huidImage" accept="image/*" />
-
-    <div class="checkbox-row">
-      <input type="checkbox" id="crossCheck" />
-      <label style="margin:0">Cross-Check Item Detail confirmed</label>
+    <div class="section-label">Scan or Type Order Number</div>
+    <div class="qr-scan-btn" id="qrScanBtn">
+      <span class="qr-icon">📷</span>
+      <span>Tap to scan QR code</span>
     </div>
-    <div class="checkbox-row">
-      <input type="checkbox" id="laserMarking" />
-      <label style="margin:0">Laser Marking done</label>
+    <div id="qrViewport">
+      <video id="qrVideo" autoplay playsinline muted></video>
+      <svg class="qr-corners" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <path d="M10,22 L10,10 L22,10" stroke="#B8975A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M78,10 L90,10 L90,22" stroke="#B8975A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M10,78 L10,90 L22,90" stroke="#B8975A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M90,78 L90,90 L78,90" stroke="#B8975A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <button class="qr-close-btn" id="qrCloseBtn">✓ Done scanning</button>
+      <div class="qr-status" id="qrStatus">Starting camera…</div>
     </div>
-    <div class="checkbox-row">
-      <input type="checkbox" id="accountsChitti" />
-      <label style="margin:0">Accounts Chitti confirmed</label>
+    <input class="order-input" type="number" id="orderInput"
+           placeholder="Type order number…" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <button class="lookup-btn" id="lookupBtn">Look Up Order →</button>
+  </div>
+
+  <!-- Order detail card -->
+  <div class="card" id="detailSection">
+    <div class="section-label">Order Details</div>
+    <div id="orderDetailRows"></div>
+  </div>
+
+  <!-- Form card -->
+  <div class="card" id="formSection">
+    <div class="section-label">HUID Details</div>
+
+    <label class="field-label">Net Weight (g)</label>
+    <input class="field-input" type="number" id="netWeight" placeholder="e.g. 5.25" step="0.01" inputmode="decimal">
+
+    <label class="field-label">Wastage (g)</label>
+    <input class="field-input" type="number" id="wastage" placeholder="e.g. 0.10" step="0.01" value="0" inputmode="decimal">
+
+    <label class="field-label">HUID Image</label>
+    <label class="file-upload" for="huidImage">📎 Tap to attach image</label>
+    <input type="file" id="huidImage" accept="image/*" style="display:none" onchange="showFileName(this)">
+    <div class="file-name" id="fileName"></div>
+
+    <label class="field-label" style="margin-top:20px;">Confirmations</label>
+
+    <div class="check-row" id="row_crossCheck" onclick="toggleCheck('crossCheck')">
+      <div class="check-box" id="box_crossCheck"></div>
+      <div class="check-label">Cross-Check Item Detail confirmed</div>
     </div>
-    <div class="checkbox-row">
-      <input type="checkbox" id="orderComplete" />
-      <label style="margin:0">Order Complete</label>
+    <div class="check-row" id="row_laserMarking" onclick="toggleCheck('laserMarking')">
+      <div class="check-box" id="box_laserMarking"></div>
+      <div class="check-label">Laser Marking done</div>
+    </div>
+    <div class="check-row" id="row_accountsChitti" onclick="toggleCheck('accountsChitti')">
+      <div class="check-box" id="box_accountsChitti"></div>
+      <div class="check-label">Accounts Chitti confirmed</div>
+    </div>
+    <div class="check-row" id="row_orderComplete" onclick="toggleCheck('orderComplete')">
+      <div class="check-box" id="box_orderComplete"></div>
+      <div class="check-label">Order Complete</div>
     </div>
 
-    <button id="submitBtn" onclick="submitHUID()">Submit HUID Done</button>
+    <button class="done-btn" id="doneBtn" style="margin-top:20px;">💎 Submit HUID Done</button>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 <script>
-var currentOrder = null;
+(function() {
+  var TEAM = [
+    { code: 'MR', name: 'Mr Sir' },
+    { code: 'RJ', name: 'Raj' },
+    { code: 'P',  name: 'Pranav' },
+    { code: 'HS', name: 'Harsh' }
+  ];
+  var USER_KEY = 'huid_device_user_v1';
+  var currentOrder = null;
+  var checks = { crossCheck: false, laserMarking: false, accountsChitti: false, orderComplete: false };
 
-function setMsg(text, cls) {
-  var m = document.getElementById('msg');
-  m.textContent = text;
-  m.className = cls || '';
-}
+  // ── User setup ──
+  function getUser() { try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch(e){ return null; } }
+  function setUser(u) {
+    localStorage.setItem(USER_KEY, JSON.stringify(u));
+    document.getElementById('currentUser').textContent = u.name;
+    document.getElementById('setupOverlay').style.display = 'none';
+  }
+  function renderSetup() {
+    var grid = document.getElementById('setupGrid');
+    grid.innerHTML = '';
+    TEAM.forEach(function(u) {
+      var el = document.createElement('div');
+      el.className = 'chip';
+      el.textContent = u.name;
+      el.onclick = function() { setUser(u); };
+      grid.appendChild(el);
+    });
+  }
+  document.getElementById('changeUser').onclick = function() { document.getElementById('setupOverlay').style.display = 'flex'; };
+  var existingUser = getUser();
+  if (existingUser) document.getElementById('currentUser').textContent = existingUser.name;
+  else document.getElementById('setupOverlay').style.display = 'flex';
+  renderSetup();
 
-function lookupOrder() {
-  var orderNo   = document.getElementById('orderInput').value.trim();
-  var scannedBy = document.getElementById('scannedBy').value.trim();
-  if (!orderNo)   { setMsg('Enter order number', 'red'); return; }
-  if (!scannedBy) { setMsg('Enter your name', 'red'); return; }
+  // ── Toast ──
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type || 'success');
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2500);
+  }
 
-  setMsg('Looking up...', '');
-  document.getElementById('formSection').style.display = 'none';
-  document.getElementById('submitBtn').style.display   = 'none';
-
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res.status === 'not_found')    { setMsg('Order not found', 'red'); return; }
-      if (res.status === 'not_ready')    { setMsg('Packing not done yet', 'red'); return; }
-      if (res.status === 'already_done') { setMsg('Already marked HUID Done', 'red'); return; }
-      if (res.status === 'error')        { setMsg('Error: ' + res.message, 'red'); return; }
-
-      currentOrder = res;
-      setMsg('', '');
-      document.getElementById('orderDetails').innerHTML =
-        'Order: <span>' + res.orderNo + '</span><br>' +
-        'Company: <span>' + res.company + '</span><br>' +
-        'Melting: <span>' + res.melting + '</span><br>' +
-        'EDOD: <span>' + (res.edod || '—') + '</span>';
-      document.getElementById('formSection').style.display = 'block';
-      document.getElementById('submitBtn').style.display   = 'block';
+  // ── QR Scanner ──
+  var qrStream = null, qrControls = null, codeReader = null;
+  function stopCamera() {
+    if (qrControls) { try { qrControls.stop(); } catch(e){} qrControls = null; }
+    if (qrStream)   { qrStream.getTracks().forEach(function(t){ t.stop(); }); qrStream = null; }
+    document.getElementById('qrVideo').srcObject = null;
+    document.getElementById('qrViewport').style.display = 'none';
+    document.getElementById('qrScanBtn').style.display  = 'flex';
+  }
+  document.getElementById('qrCloseBtn').addEventListener('click', stopCamera);
+  document.getElementById('qrScanBtn').addEventListener('click', function() {
+    if (!window.ZXing) { showToast('Scanner still loading — try again', 'fail'); return; }
+    document.getElementById('qrScanBtn').style.display  = 'none';
+    document.getElementById('qrViewport').style.display = 'block';
+    document.getElementById('qrStatus').textContent     = 'Starting camera…';
+    if (!codeReader) codeReader = new ZXing.BrowserQRCodeReader();
+    codeReader.decodeFromVideoDevice(undefined, document.getElementById('qrVideo'), function(result, err) {
+      if (result) {
+        var num = result.getText().replace(/\D/g, '');
+        if (num) {
+          document.getElementById('orderInput').value = num;
+          if (navigator.vibrate) navigator.vibrate(60);
+          document.getElementById('qrStatus').textContent = '✓ ' + num + ' — tap Done scanning';
+        }
+      } else if (err && !(err instanceof ZXing.NotFoundException)) {
+        document.getElementById('qrStatus').textContent = 'Error: ' + err.message;
+      }
     })
-    .withFailureHandler(function(e) { setMsg('Error: ' + e.message, 'red'); })
-    .getHUIDScanOrderDetails(orderNo);
-}
+    .then(function(controls) {
+      qrControls = controls;
+      if (document.getElementById('qrVideo').srcObject) qrStream = document.getElementById('qrVideo').srcObject;
+      document.getElementById('qrStatus').textContent = 'Point at a QR code';
+    })
+    .catch(function(err) { stopCamera(); showToast('Camera error: ' + (err.name || err.message), 'fail'); });
+  });
 
-function submitHUID() {
-  if (!currentOrder) return;
+  // ── Lookup ──
+  document.getElementById('lookupBtn').addEventListener('click', function() {
+    var u = getUser();
+    if (!u) { document.getElementById('setupOverlay').style.display = 'flex'; return; }
+    var orderNo = document.getElementById('orderInput').value.trim();
+    if (!orderNo) { showToast('Enter an order number', 'fail'); return; }
+    stopCamera();
+    document.getElementById('lookupBtn').textContent = 'Looking up…';
+    document.getElementById('lookupBtn').disabled = true;
+    document.getElementById('detailSection').style.display = 'none';
+    document.getElementById('formSection').style.display   = 'none';
 
-  var crossCheck     = document.getElementById('crossCheck').checked;
-  var accountsChitti = document.getElementById('accountsChitti').checked;
-  if (!crossCheck)     { setMsg('Confirm Cross-Check first', 'red'); return; }
-  if (!accountsChitti) { setMsg('Confirm Accounts Chitti first', 'red'); return; }
-
-  var netWeight = document.getElementById('netWeight').value;
-  if (!netWeight || parseFloat(netWeight) <= 0) { setMsg('Enter net weight', 'red'); return; }
-
-  var fileInput = document.getElementById('huidImage');
-  var file      = fileInput.files[0];
-
-  document.getElementById('submitBtn').disabled = true;
-  setMsg('Submitting...', '');
-
-  function doSubmit(imageBase64, imageName, imageMime) {
-    var payload = {
-      orderNo:       currentOrder.orderNo,
-      scannedBy:     document.getElementById('scannedBy').value.trim(),
-      netWeight:     netWeight,
-      wastage:       document.getElementById('wastage').value || 0,
-      imageBase64:   imageBase64 || '',
-      imageName:     imageName   || '',
-      imageMime:     imageMime   || '',
-      crossCheck:    crossCheck,
-      laserMarking:  document.getElementById('laserMarking').checked,
-      accountsChitti: accountsChitti,
-      orderComplete: document.getElementById('orderComplete').checked,
-    };
     google.script.run
       .withSuccessHandler(function(res) {
-        if (res.status === 'done') {
-          setMsg('✓ HUID Done — ' + currentOrder.orderNo, 'green');
-          document.getElementById('formSection').style.display = 'none';
-          document.getElementById('submitBtn').style.display   = 'none';
-          document.getElementById('orderInput').value = '';
-          currentOrder = null;
-        } else {
-          setMsg('Error: ' + (res.message || res.status), 'red');
-          document.getElementById('submitBtn').disabled = false;
-        }
+        document.getElementById('lookupBtn').textContent = 'Look Up Order →';
+        document.getElementById('lookupBtn').disabled = false;
+        if (res.status === 'not_found')    { showToast('Order not found', 'fail'); return; }
+        if (res.status === 'not_ready')    { showToast('Packing not done yet', 'fail'); return; }
+        if (res.status === 'already_done') { showToast('Already marked HUID Done', 'fail'); return; }
+        if (res.status === 'error')        { showToast('Error: ' + res.message, 'fail'); return; }
+
+        currentOrder = res;
+        document.getElementById('orderDetailRows').innerHTML =
+          detailRow('Order No', res.orderNo) +
+          detailRow('Company', res.company || '—') +
+          detailRow('Melting', res.melting || '—') +
+          detailRow('EDOD', res.edod || '—');
+        document.getElementById('detailSection').style.display = 'block';
+        document.getElementById('formSection').style.display   = 'block';
+        resetForm();
       })
       .withFailureHandler(function(e) {
-        setMsg('Error: ' + e.message, 'red');
-        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('lookupBtn').textContent = 'Look Up Order →';
+        document.getElementById('lookupBtn').disabled = false;
+        showToast('Error: ' + e.message, 'fail');
       })
-      .submitHUIDScan(payload);
+      .getHUIDScanOrderDetails(orderNo);
+  });
+
+  function detailRow(label, value) {
+    return '<div class="order-detail-row"><span class="order-detail-label">' + label +
+           '</span><span class="order-detail-value">' + value + '</span></div>';
   }
 
-  if (file) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var base64 = e.target.result.split(',')[1];
-      doSubmit(base64, file.name, file.type);
-    };
-    reader.readAsDataURL(file);
-  } else {
-    doSubmit('', '', '');
+  // ── Checkboxes ──
+  window.toggleCheck = function(key) {
+    checks[key] = !checks[key];
+    var row = document.getElementById('row_' + key);
+    var box = document.getElementById('box_' + key);
+    if (checks[key]) { row.classList.add('checked'); box.textContent = '✓'; }
+    else             { row.classList.remove('checked'); box.textContent = ''; }
+  };
+
+  // ── File upload ──
+  window.showFileName = function(input) {
+    document.getElementById('fileName').textContent = input.files[0] ? '📎 ' + input.files[0].name : '';
+  };
+
+  function resetForm() {
+    document.getElementById('netWeight').value = '';
+    document.getElementById('wastage').value   = '0';
+    document.getElementById('huidImage').value = '';
+    document.getElementById('fileName').textContent = '';
+    Object.keys(checks).forEach(function(k) {
+      checks[k] = false;
+      document.getElementById('row_' + k).classList.remove('checked');
+      document.getElementById('box_' + k).textContent = '';
+    });
   }
-}
+
+  // ── Submit ──
+  document.getElementById('doneBtn').addEventListener('click', function() {
+    if (!currentOrder) return;
+    if (!checks.crossCheck)     { showToast('Confirm Cross-Check first', 'fail'); return; }
+    if (!checks.accountsChitti) { showToast('Confirm Accounts Chitti first', 'fail'); return; }
+    var netWeight = document.getElementById('netWeight').value;
+    if (!netWeight || parseFloat(netWeight) <= 0) { showToast('Enter net weight', 'fail'); return; }
+
+    var file = document.getElementById('huidImage').files[0];
+    document.getElementById('doneBtn').disabled = true;
+    document.getElementById('doneBtn').textContent = 'Submitting…';
+
+    function doSubmit(imageBase64, imageName, imageMime) {
+      var payload = {
+        orderNo:        currentOrder.orderNo,
+        scannedBy:      getUser().name,
+        netWeight:      netWeight,
+        wastage:        document.getElementById('wastage').value || 0,
+        imageBase64:    imageBase64 || '',
+        imageName:      imageName   || '',
+        imageMime:      imageMime   || '',
+        crossCheck:     checks.crossCheck,
+        laserMarking:   checks.laserMarking,
+        accountsChitti: checks.accountsChitti,
+        orderComplete:  checks.orderComplete,
+      };
+      google.script.run
+        .withSuccessHandler(function(res) {
+          document.getElementById('doneBtn').disabled = false;
+          document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
+          if (res.status === 'done') {
+            showToast('💎 HUID Done — ' + currentOrder.orderNo, 'success');
+            document.getElementById('orderInput').value = '';
+            document.getElementById('detailSection').style.display = 'none';
+            document.getElementById('formSection').style.display   = 'none';
+            currentOrder = null;
+          } else {
+            showToast('Error: ' + (res.message || res.status), 'fail');
+          }
+        })
+        .withFailureHandler(function(e) {
+          document.getElementById('doneBtn').disabled = false;
+          document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
+          showToast('Error: ' + e.message, 'fail');
+        })
+        .submitHUIDScan(payload);
+    }
+
+    if (file) {
+      var reader = new FileReader();
+      reader.onload = function(e) { doSubmit(e.target.result.split(',')[1], file.name, file.type); };
+      reader.readAsDataURL(file);
+    } else {
+      doSubmit('', '', '');
+    }
+  });
+})();
 </script>
 </body>
 </html>
