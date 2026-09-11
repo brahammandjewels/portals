@@ -273,6 +273,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 <script>
 (function() {
+    var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaBd1DOgSQmWMSoLFAHPyhnjFICEXJC4-e18IuAHQMkF7iDX5Z4ZLYKG-jIv6t3yqD/exec';
   var TEAM = [
     { code: 'MR', name: 'Mr Sir' },
     { code: 'RJ', name: 'Raj' },
@@ -364,8 +365,9 @@
     document.getElementById('detailSection').style.display = 'none';
     document.getElementById('formSection').style.display   = 'none';
 
-    google.script.run
-      .withSuccessHandler(function(res) {
+        fetch(APPS_SCRIPT_URL + '?action=getHUIDOrder&orderNo=' + encodeURIComponent(orderNo))
+      .then(function(r){ return r.json(); })
+      .then(function(res) {
         document.getElementById('lookupBtn').textContent = 'Look Up Order →';
         document.getElementById('lookupBtn').disabled = false;
         if (res.status === 'not_found')    { showToast('Order not found', 'fail'); return; }
@@ -383,13 +385,11 @@
         document.getElementById('formSection').style.display   = 'block';
         resetForm();
       })
-      .withFailureHandler(function(e) {
+            .catch(function(e) {
         document.getElementById('lookupBtn').textContent = 'Look Up Order →';
         document.getElementById('lookupBtn').disabled = false;
         showToast('Error: ' + e.message, 'fail');
-      })
-      .getHUIDScanOrderDetails(orderNo);
-  });
+      });
 
   function detailRow(label, value) {
     return '<div class="order-detail-row"><span class="order-detail-label">' + label +
@@ -448,8 +448,12 @@
         accountsChitti: checks.accountsChitti,
         orderComplete:  checks.orderComplete,
       };
-      google.script.run
-        .withSuccessHandler(function(res) {
+            fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+        .then(function(r){ return r.json(); })
+        .then(function(res) {
           document.getElementById('doneBtn').disabled = false;
           document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
           if (res.status === 'done') {
@@ -462,12 +466,12 @@
             showToast('Error: ' + (res.message || res.status), 'fail');
           }
         })
-        .withFailureHandler(function(e) {
+                .catch(function(e) {
           document.getElementById('doneBtn').disabled = false;
           document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
           showToast('Error: ' + e.message, 'fail');
-        })
-        .submitHUIDScan(payload);
+        });
+        
     }
 
     if (file) {
