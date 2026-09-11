@@ -479,7 +479,8 @@
     document.getElementById('doneBtn').textContent = 'Submitting…';
 
     function doSubmit(imageBase64, imageName, imageMime) {
-      var payload = {
+        var payload = {
+        processes:      ['HUIDDone'],
         orderNo:        currentOrder.orderNo,
         scannedBy:      getUser().name,
         netWeight:      netWeight,
