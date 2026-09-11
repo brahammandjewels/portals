@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HUID Scan Portal</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: sans-serif; background: #f4f4f4; padding: 16px; }
+  h2 { text-align: center; margin-bottom: 16px; font-size: 18px; color: #222; }
+  .card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number], input[type=file] {
+    width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;
+    font-size: 15px; margin-bottom: 12px;
+  }
+  .order-info { font-size: 13px; line-height: 1.8; }
+  .order-info span { font-weight: 700; color: #222; }
+  .checkbox-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 14px; }
+  .checkbox-row input[type=checkbox] { width: 18px; height: 18px; }
+  button { width: 100%; padding: 14px; border: none; border-radius: 8px;
+    font-size: 16px; font-weight: 700; cursor: pointer; }
+  #scanBtn  { background: #222; color: #fff; }
+  #submitBtn { background: #4caf50; color: #fff; display: none; margin-top: 8px; }
+  #msg { text-align: center; margin-top: 12px; font-size: 14px; font-weight: 600; }
+  .red  { color: #e53935; }
+  .green { color: #4caf50; }
+  #formSection { display: none; }
+  .tag { display: inline-block; background: #eee; border-radius: 4px;
+    padding: 2px 8px; font-size: 12px; font-weight: 700; margin-right: 4px; }
+</style>
+</head>
+<body>
+<h2>HUID Scan Portal</h2>
+
+<!-- Step 1: Scan -->
+<div class="card">
+  <label>Scanned By</label>
+  <input type="text" id="scannedBy" placeholder="Your name" />
+  <label>Order No.</label>
+  <input type="text" id="orderInput" placeholder="Scan or type order no." />
+  <button id="scanBtn" onclick="lookupOrder()">Lookup Order</button>
+  <div id="msg"></div>
+</div>
+
+<!-- Step 2: Order details + form -->
+<div id="formSection">
+  <div class="card order-info" id="orderDetails"></div>
+
+  <div class="card">
+    <label>Net Weight (g)</label>
+    <input type="number" id="netWeight" placeholder="e.g. 5.25" step="0.01" />
+
+    <label>Wastage (g)</label>
+    <input type="number" id="wastage" placeholder="e.g. 0.10" step="0.01" value="0" />
+
+    <label>HUID Image</label>
+    <input type="file" id="huidImage" accept="image/*" />
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="crossCheck" />
+      <label style="margin:0">Cross-Check Item Detail confirmed</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="laserMarking" />
+      <label style="margin:0">Laser Marking done</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="accountsChitti" />
+      <label style="margin:0">Accounts Chitti confirmed</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="orderComplete" />
+      <label style="margin:0">Order Complete</label>
+    </div>
+
+    <button id="submitBtn" onclick="submitHUID()">Submit HUID Done</button>
+  </div>
+</div>
+
+<script>
+var currentOrder = null;
+
+function setMsg(text, cls) {
+  var m = document.getElementById('msg');
+  m.textContent = text;
+  m.className = cls || '';
+}
+
+function lookupOrder() {
+  var orderNo   = document.getElementById('orderInput').value.trim();
+  var scannedBy = document.getElementById('scannedBy').value.trim();
+  if (!orderNo)   { setMsg('Enter order number', 'red'); return; }
+  if (!scannedBy) { setMsg('Enter your name', 'red'); return; }
+
+  setMsg('Looking up...', '');
+  document.getElementById('formSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display   = 'none';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.status === 'not_found')    { setMsg('Order not found', 'red'); return; }
+      if (res.status === 'not_ready')    { setMsg('Packing not done yet', 'red'); return; }
+      if (res.status === 'already_done') { setMsg('Already marked HUID Done', 'red'); return; }
+      if (res.status === 'error')        { setMsg('Error: ' + res.message, 'red'); return; }
+
+      currentOrder = res;
+      setMsg('', '');
+      document.getElementById('orderDetails').innerHTML =
+        'Order: <span>' + res.orderNo + '</span><br>' +
+        'Company: <span>' + res.company + '</span><br>' +
+        'Melting: <span>' + res.melting + '</span><br>' +
+        'EDOD: <span>' + (res.edod || '—') + '</span>';
+      document.getElementById('formSection').style.display = 'block';
+      document.getElementById('submitBtn').style.display   = 'block';
+    })
+    .withFailureHandler(function(e) { setMsg('Error: ' + e.message, 'red'); })
+    .getHUIDScanOrderDetails(orderNo);
+}
+
+function submitHUID() {
+  if (!currentOrder) return;
+
+  var crossCheck     = document.getElementById('crossCheck').checked;
+  var accountsChitti = document.getElementById('accountsChitti').checked;
+  if (!crossCheck)     { setMsg('Confirm Cross-Check first', 'red'); return; }
+  if (!accountsChitti) { setMsg('Confirm Accounts Chitti first', 'red'); return; }
+
+  var netWeight = document.getElementById('netWeight').value;
+  if (!netWeight || parseFloat(netWeight) <= 0) { setMsg('Enter net weight', 'red'); return; }
+
+  var fileInput = document.getElementById('huidImage');
+  var file      = fileInput.files[0];
+
+  document.getElementById('submitBtn').disabled = true;
+  setMsg('Submitting...', '');
+
+  function doSubmit(imageBase64, imageName, imageMime) {
+    var payload = {
+      orderNo:       currentOrder.orderNo,
+      scannedBy:     document.getElementById('scannedBy').value.trim(),
+      netWeight:     netWeight,
+      wastage:       document.getElementById('wastage').value || 0,
+      imageBase64:   imageBase64 || '',
+      imageName:     imageName   || '',
+      imageMime:     imageMime   || '',
+      crossCheck:    crossCheck,
+      laserMarking:  document.getElementById('laserMarking').checked,
+      accountsChitti: accountsChitti,
+      orderComplete: document.getElementById('orderComplete').checked,
+    };
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.status === 'done') {
+          setMsg('✓ HUID Done — ' + currentOrder.orderNo, 'green');
+          document.getElementById('formSection').style.display = 'none';
+          document.getElementById('submitBtn').style.display   = 'none';
+          document.getElementById('orderInput').value = '';
+          currentOrder = null;
+        } else {
+          setMsg('Error: ' + (res.message || res.status), 'red');
+          document.getElementById('submitBtn').disabled = false;
+        }
+      })
+      .withFailureHandler(function(e) {
+        setMsg('Error: ' + e.message, 'red');
+        document.getElementById('submitBtn').disabled = false;
+      })
+      .submitHUIDScan(payload);
+  }
+
+  if (file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var base64 = e.target.result.split(',')[1];
+      doSubmit(base64, file.name, file.type);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    doSubmit('', '', '');
+  }
+}
+</script>
+</body>
+</html>
