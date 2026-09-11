@@ -339,9 +339,20 @@
         if (num) {
         document.getElementById('orderInput').value = num;
           if (navigator.vibrate) navigator.vibrate(60);
-          document.getElementById('qrStatus').textContent = '✓ ' + num + ' — looking up…';
+                    document.getElementById('qrStatus').textContent = '✓ ' + num + ' — looking up…';
           stopCamera();
-          document.getElementById('lookupBtn').click();
+          var secs = 3;
+          countdownEl.textContent = 'Looking up in ' + secs + '…';
+          countdownEl.style.display = 'block';
+          countdownInterval = setInterval(function() {
+            secs--;
+            if (secs <= 0) { clearInterval(countdownInterval); return; }
+            countdownEl.textContent = 'Looking up in ' + secs + '…';
+          }, 1000);
+          typingTimer = setTimeout(function() {
+            clearCountdown();
+            document.getElementById('lookupBtn').click();
+          }, 3000);
         }
       } else if (err && !(err instanceof ZXing.NotFoundException)) {
         document.getElementById('qrStatus').textContent = 'Error: ' + err.message;
@@ -355,15 +366,36 @@
     .catch(function(err) { stopCamera(); showToast('Camera error: ' + (err.name || err.message), 'fail'); });
   });
 
-    var typingTimer = null;
-  document.getElementById('orderInput').addEventListener('input', function() {
+      var typingTimer = null;
+  var countdownInterval = null;
+  var countdownEl = document.createElement('div');
+  countdownEl.style.cssText = 'display:none;margin-top:8px;text-align:center;font-size:13px;font-weight:700;color:var(--gold-dark);letter-spacing:0.05em;';
+  document.getElementById('orderInput').insertAdjacentElement('afterend', countdownEl);
+
+    window.clearCountdown = function clearCountdown() {
     clearTimeout(typingTimer);
+    clearInterval(countdownInterval);
+    countdownEl.style.display = 'none';
+    countdownEl.textContent = '';
+  }
+
+  document.getElementById('orderInput').addEventListener('input', function() {
+    clearCountdown();
     if (!this.value.trim()) return;
+    var secs = 3;
+    countdownEl.innerHTML = 'Looking up in ' + secs + '… <span onclick="clearCountdown()" style="margin-left:8px;cursor:pointer;color:var(--error);font-size:12px;">✕ cancel</span>';
+    countdownEl.style.display = 'block';
+    countdownInterval = setInterval(function() {
+      secs--;
+      if (secs <= 0) { clearInterval(countdownInterval); return; }
+            countdownEl.innerHTML = 'Looking up in ' + secs + '… <span onclick="clearCountdown()" style="margin-left:8px;cursor:pointer;color:var(--error);font-size:12px;">✕ cancel</span>';
+    }, 1000);
     typingTimer = setTimeout(function() {
+      clearCountdown();
       document.getElementById('lookupBtn').click();
     }, 3000);
   });
-  
+
   // ── Lookup ──
   document.getElementById('lookupBtn').addEventListener('click', function() {
     var u = getUser();
