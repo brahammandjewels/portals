@@ -431,7 +431,7 @@
 
   // ── Batch management ───────────────────────────────────────────────────────
   function addToBatch(json) {
-    batch.push({ orderNo: json.orderNo, melting: json.melting, companyName: json.companyName, cadStatus: json.cadStatus, weight: '' });
+       batch.push({ orderNo: json.orderNo, weight: '' });
     renderBatch();
     showToast('Order ' + json.orderNo + ' added ✓', 'success');
     // scroll to batch
@@ -465,19 +465,11 @@
       div.className = 'batch-item';
       div.id = 'batch-item-' + item.orderNo;
 
-      var alreadyBadge = item.cadStatus === 'Yes'
-        ? '<span class="badge already">⚠️ Already done</span>'
-        : '';
-
+      
       div.innerHTML =
         '<div class="batch-item-top">' +
           '<div class="batch-item-left">' +
             '<div class="batch-order-no">' + item.orderNo + '</div>' +
-            '<div class="batch-badges">' +
-              '<span class="badge">' + (item.melting || 'N/A') + '</span>' +
-              '<span class="badge company">' + (item.companyName || 'N/A') + '</span>' +
-              alreadyBadge +
-            '</div>' +
           '</div>' +
           '<button class="batch-remove" data-order="' + item.orderNo + '">✕</button>' +
         '</div>' +
