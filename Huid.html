@@ -175,6 +175,12 @@
   .toast.fail{background:var(--error);color:#fff;}
   .toast.show{opacity:1;}
   #formSection{display:none;}
+
+  .footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;z-index:20;}
+.footer-status{display:flex;align-items:center;gap:6px;color:var(--ink-muted);}
+.footer-dot{width:7px;height:7px;border-radius:50%;background:var(--success);}
+.footer-dot.offline{background:var(--warn);}
+.footer-link{color:var(--gold-dark);cursor:pointer;text-decoration:underline;font-weight:600;font-size:12px;background:none;border:none;font-family:'DM Sans',sans-serif;}
 </style>
 </head>
 <body>
@@ -460,7 +466,7 @@
 
   // ── Submit ──
   function handleSubmit() {
-        if (orders.length === 0) { showToast('Add at least one order', 'fail'); return; }
+    if (orders.length === 0) { showToast('Add at least one order', 'fail'); return; }
     var u = getUser();
     if (!u) { document.getElementById('setupOverlay').style.display = 'flex'; return; }
     for (var i = 0; i < orders.length; i++) {
@@ -516,17 +522,115 @@
       });
     }
 
-       doSubmit();
+          // Queue-first: save instantly, process in background
+    var u2 = getUser();
+    orders.forEach(function(item) {
+      var entry = {
+        orderNo:        item.orderNo,
+        scannedBy:      u2 ? u2.name : '',
+        netWeight:      item.netWeight,
+        wastage:        item.wastage || '0',
+        imageBase64:    item.imageBase64 || '',
+        imageName:      item.imageName   || '',
+        imageMime:      item.imageMime   || '',
+        crossCheck:     item.crossCheck,
+        laserMarking:   item.laserMarking,
+        accountsChitti: item.accountsChitti,
+        orderComplete:  item.orderComplete,
+        ts:             new Date().toISOString(),
+        syncStatus:     'pending'
+      };
+      saveToQueue(entry);
+    });
+    showToast('✓ Saved — syncing in background…', 'success');
+    resetAll();
+    updateFooter();
+    trySyncQueue();
   }
+
   var QUEUE_KEY = 'huid_queue_v1';
-  function saveToQueue(item, syncStatus) {
+
+  function saveToQueue(entry) {
     try {
       var q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
-      q.push({ orderNo: item.orderNo, netWeight: item.netWeight, wastage: item.wastage, scannedBy: item.scannedBy, timestamp: new Date().toISOString(), syncStatus: syncStatus });
+      q.push(entry);
       localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
     } catch(e) {}
   }
+
+  function getQueue() {
+    try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch(e) { return []; }
+  }
+
+  function trySyncQueue() {
+    if (!navigator.onLine) return;
+    var q = getQueue();
+    var pending = q.filter(function(e){ return e.syncStatus === 'pending'; });
+    if (pending.length === 0) return;
+
+    var payload = pending.map(function(item) {
+      return {
+        processes:      ['HUIDDone'],
+        orderNo:        item.orderNo,
+        scannedBy:      item.scannedBy,
+        netWeight:      item.netWeight,
+        wastage:        item.wastage || 0,
+        imageBase64:    item.imageBase64 || '',
+        imageName:      item.imageName   || '',
+        imageMime:      item.imageMime   || '',
+        crossCheck:     item.crossCheck,
+        laserMarking:   item.laserMarking,
+        accountsChitti: item.accountsChitti,
+        orderComplete:  item.orderComplete
+      };
+    });
+
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(res) {
+      var q2 = getQueue();
+      (res.results || []).forEach(function(r) {
+        var idx = q2.findIndex(function(e){ return e.orderNo === r.orderNo && e.syncStatus === 'pending'; });
+        if (idx !== -1) q2[idx].syncStatus = r.status === 'done' ? 'synced' : 'error';
+      });
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(q2));
+      updateFooter();
+    })
+    .catch(function(){ /* stay pending, retry next time */ });
+  }
+
+  function updateFooter() {
+    var q = getQueue();
+    var pending = q.filter(function(e){ return e.syncStatus === 'pending'; }).length;
+    var dot  = document.getElementById('footerDot');
+    var cnt  = document.getElementById('footerPending');
+    var online = navigator.onLine;
+    if (dot)  { dot.className = 'footer-dot' + (online ? '' : ' offline'); }
+    if (cnt)  { cnt.textContent = pending + ' pending'; }
+  }
+
+  window.addEventListener('online',  function(){ updateFooter(); trySyncQueue(); });
+  window.addEventListener('offline', function(){ updateFooter(); });
+
+  trySyncQueue();
+  updateFooter();
 })();
 </script>
+
+<div class="footer-bar">
+  <div class="footer-status">
+    <div class="footer-dot" id="footerDot"></div>
+    <span id="footerOnline">Online</span>
+    &nbsp;·&nbsp;
+    <span id="footerPending">0 pending</span>
+  </div>
+  <div class="footer-actions">
+    <button class="footer-link" onclick="trySyncQueue();updateFooter();">Sync now</button>
+  </div>
+</div>
 </body>
 </html>
