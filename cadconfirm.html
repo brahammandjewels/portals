@@ -358,8 +358,9 @@
     qrViewport.style.display = 'none';
     qrScanBtn.style.display  = 'flex';
   }
-  document.getElementById('qrCloseBtn').addEventListener('click', stopCamera);
+    document.getElementById('qrCloseBtn').addEventListener('click', stopCamera);
   qrScanBtn.addEventListener('click', function() {
+    if (qrViewport.style.display === 'block') { stopCamera(); return; }
     if (!window.ZXing) { showToast('Scanner still loading — try again', 'fail'); return; }
     qrScanBtn.style.display  = 'none';
     qrViewport.style.display = 'block';
@@ -369,7 +370,6 @@
       if (result) {
         var num = result.getText().replace(/\D/g, '');
         if (num) {
-            stopCamera();
           if (navigator.vibrate) navigator.vibrate(60);
           handleLookup(num);
         }
