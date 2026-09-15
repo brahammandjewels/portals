@@ -253,10 +253,13 @@
       <button class="qr-close-btn" id="qrCloseBtn">✓ Done scanning</button>
       <div class="qr-status" id="qrStatus">Starting camera…</div>
     </div>
-    <input class="order-input" type="number" id="orderInput"
-           placeholder="Type order number…" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-        <button class="lookup-btn" id="lookupBtn">Look up all →</button>
-        <div id="tagWrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;min-height:0;"></div>
+        <div id="tagInputBox" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface-alt);border:2px solid var(--border-strong);border-radius:14px;padding:10px 14px;min-height:54px;cursor:text;margin-bottom:10px;" onclick="document.getElementById('orderInput').focus()">
+      <div id="tagWrap" style="display:contents;"></div>
+      <input class="order-input" type="number" id="orderInput"
+             placeholder="Type order number…" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+             style="border:none;background:transparent;padding:4px 2px;margin:0;min-width:120px;flex:1;font-size:18px;">
+    </div>
+    <button class="lookup-btn" id="lookupBtn">Look up all →</button>
     <div class="tag-hint">Scan or type all order numbers first, then tap Look Up.</div>
   </div>
 
