@@ -488,32 +488,6 @@
       if (!o.accountsChitti) { showToast('Accounts Chitti not confirmed for ' + o.orderNo, 'fail'); return; }
     }
 
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-      })
-      .then(function(r){ return r.json(); })
-            .then(function(res) {
-        var b = document.getElementById('doneBtn'); if(b){b.disabled=false;b.textContent='💎 Submit HUID Done ('+orders.length+')';}
-        var allDone = res.results && res.results.every(function(r){ return r.status === 'done'; });
-        if (allDone) {
-          payload.forEach(function(item){ saveToQueue(item, 'synced'); });
-          showToast('💎 HUID Done — ' + payload.map(function(p){return p.orderNo;}).join(', '), 'success');
-          resetAll();
-        } else {
-          payload.forEach(function(item){ saveToQueue(item, 'error'); });
-          var errors = (res.results || []).filter(function(r){ return r.status !== 'done'; });
-          showToast('Error: ' + (errors[0] && errors[0].message || 'unknown'), 'fail');
-        }
-      })
-      .catch(function() {
-        var b = document.getElementById('doneBtn'); if(b){b.disabled=false;b.textContent='💎 Submit HUID Done ('+orders.length+')';}
-        payload.forEach(function(item){ saveToQueue(item, 'pending'); });
-        showToast('Offline — saved locally', 'fail');
-      });
-    }
-
           // Queue-first: save instantly, process in background
     var u2 = getUser();
     orders.forEach(function(item) {
