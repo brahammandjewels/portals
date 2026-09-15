@@ -508,18 +508,27 @@
       };
       saveToQueue(entry);
     });
-    showToast('✓ Saved — syncing in background…', 'success');
+        showToast('✓ Saved — syncing in background…', 'success');
     resetAll();
     updateFooter();
+    renderToday();
     trySyncQueue();
   }
 
   var QUEUE_KEY = 'huid_queue_v1';
 
-  function saveToQueue(entry) {
+    function saveToQueue(entry) {
     try {
+      var images = {};
+      try { images = JSON.parse(localStorage.getItem(QUEUE_KEY + '_images') || '{}'); } catch(e) {}
+      if (entry.imageBase64) {
+        images[entry.ts] = { imageBase64: entry.imageBase64, imageName: entry.imageName, imageMime: entry.imageMime };
+        localStorage.setItem(QUEUE_KEY + '_images', JSON.stringify(images));
+      }
+      var lean = Object.assign({}, entry);
+      lean.imageBase64 = '';
       var q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
-      q.push(entry);
+      q.push(lean);
       localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
     } catch(e) {}
   }
@@ -534,16 +543,19 @@
     var pending = q.filter(function(e){ return e.syncStatus === 'pending'; });
     if (pending.length === 0) return;
 
+       var images = {};
+    try { images = JSON.parse(localStorage.getItem(QUEUE_KEY + '_images') || '{}'); } catch(e) {}
     var payload = pending.map(function(item) {
+      var img = images[item.ts] || {};
       return {
         processes:      ['HUIDDone'],
         orderNo:        item.orderNo,
         scannedBy:      item.scannedBy,
         netWeight:      item.netWeight,
         wastage:        item.wastage || 0,
-        imageBase64:    item.imageBase64 || '',
-        imageName:      item.imageName   || '',
-        imageMime:      item.imageMime   || '',
+        imageBase64:    img.imageBase64 || '',
+        imageName:      img.imageName   || '',
+        imageMime:      img.imageMime   || '',
         crossCheck:     item.crossCheck,
         laserMarking:   item.laserMarking,
         accountsChitti: item.accountsChitti,
@@ -563,7 +575,11 @@
         var idx = q2.findIndex(function(e){ return e.orderNo === r.orderNo && e.syncStatus === 'pending'; });
         if (idx !== -1) q2[idx].syncStatus = r.status === 'done' ? 'synced' : 'error';
       });
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(q2));
+            localStorage.setItem(QUEUE_KEY, JSON.stringify(q2));
+      var imgs = {};
+      try { imgs = JSON.parse(localStorage.getItem(QUEUE_KEY + '_images') || '{}'); } catch(e) {}
+      q2.filter(function(e){ return e.syncStatus === 'synced'; }).forEach(function(e){ delete imgs[e.ts]; });
+      try { localStorage.setItem(QUEUE_KEY + '_images', JSON.stringify(imgs)); } catch(e) {}
       updateFooter();
     })
     .catch(function(){ /* stay pending, retry next time */ });
