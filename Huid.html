@@ -484,6 +484,7 @@
     for (var i = 0; i < orders.length; i++) {
       var o = orders[i];
       if (!o.netWeight || parseFloat(o.netWeight) <= 0) { showToast('Enter net weight for ' + o.orderNo, 'fail'); return; }
+      if (!o.imageName)      { showToast('Attach HUID image for ' + o.orderNo, 'fail'); return; }
       if (!o.crossCheck)     { showToast('Cross-Check not confirmed for ' + o.orderNo, 'fail'); return; }
       if (!o.accountsChitti) { showToast('Accounts Chitti not confirmed for ' + o.orderNo, 'fail'); return; }
     }
