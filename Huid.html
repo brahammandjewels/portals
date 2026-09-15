@@ -221,41 +221,7 @@
     <div class="hint">Scan a QR OR type a number → Enter / Space to add.</div>
   </div>
 
-  <!-- Form card -->
-  <div class="card" id="formSection">
-    <div class="section-label">HUID Details</div>
-
-    <label class="field-label">Net Weight (g)</label>
-    <input class="field-input" type="number" id="netWeight" placeholder="e.g. 5.25" step="0.01" inputmode="decimal">
-
-    <label class="field-label">Wastage (g)</label>
-    <input class="field-input" type="number" id="wastage" placeholder="e.g. 0.10" step="0.01" value="0" inputmode="decimal">
-
-    <label class="field-label" style="margin-top:20px;">HUID Image</label>
-    <label class="file-upload" for="huidImage">📎 Tap to attach image</label>
-    <input type="file" id="huidImage" accept="image/*" style="display:none" onchange="showFileName(this)">
-    <div class="file-name" id="fileName"></div>
-
-    <label class="field-label" style="margin-top:20px;">Confirmations</label>
-    <div class="check-row" id="row_crossCheck" onclick="toggleCheck('crossCheck')">
-      <div class="check-box" id="box_crossCheck"></div>
-      <div class="check-label">Cross-Check Item Detail confirmed</div>
-    </div>
-    <div class="check-row" id="row_laserMarking" onclick="toggleCheck('laserMarking')">
-      <div class="check-box" id="box_laserMarking"></div>
-      <div class="check-label">Laser Marking done</div>
-    </div>
-    <div class="check-row" id="row_accountsChitti" onclick="toggleCheck('accountsChitti')">
-      <div class="check-box" id="box_accountsChitti"></div>
-      <div class="check-label">Accounts Chitti confirmed</div>
-    </div>
-    <div class="check-row" id="row_orderComplete" onclick="toggleCheck('orderComplete')">
-      <div class="check-box" id="box_orderComplete"></div>
-      <div class="check-label">Order Complete</div>
-    </div>
-
-    <button class="done-btn" id="doneBtn" style="margin-top:20px;">💎 Submit HUID Done</button>
-  </div>
+    <div id="orderCards"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
@@ -269,8 +235,7 @@
     { code: 'HS', name: 'Harsh' }
   ];
   var USER_KEY = 'huid_device_user_v1';
-  var orders = [];
-  var checks = { crossCheck: false, laserMarking: false, accountsChitti: false, orderComplete: false };
+    var orders = []; // array of { orderNo, netWeight, wastage, imageBase64, imageName, imageMime, crossCheck, laserMarking, accountsChitti, orderComplete }
 
   // ── User setup ──
   function getUser() { try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch(e){ return null; } }
@@ -306,36 +271,110 @@
   }
 
   // ── Tags ──
-  function addOrder(num) {
+    function addOrder(num) {
     num = String(num).trim();
     if (!num) return;
-    if (orders.indexOf(num) !== -1) { showToast(num + ' already added', 'fail'); return; }
-    orders.push(num);
+    if (orders.some(function(o){ return o.orderNo === num; })) { showToast(num + ' already added', 'fail'); return; }
+    if (orders.length >= 5) { showToast('Max 5 orders at a time', 'fail'); return; }
+    orders.push({ orderNo: num, netWeight: '', wastage: '0', imageBase64: '', imageName: '', imageMime: '', crossCheck: false, laserMarking: false, accountsChitti: false, orderComplete: false });
     renderTags();
     document.getElementById('tagInput').value = '';
-    document.getElementById('formSection').style.display = 'block';
   }
 
-  function removeOrder(num) {
-    orders = orders.filter(function(o){ return o !== num; });
+    function removeOrder(num) {
+    orders = orders.filter(function(o){ return o.orderNo !== num; });
     renderTags();
-    if (orders.length === 0) document.getElementById('formSection').style.display = 'none';
   }
 
-  function renderTags() {
+    function renderTags() {
     var wrap = document.getElementById('tagWrap');
     var input = document.getElementById('tagInput');
-    // remove old tags
     wrap.querySelectorAll('.tag').forEach(function(el){ el.remove(); });
-    orders.forEach(function(num) {
+    orders.forEach(function(item) {
       var tag = document.createElement('span');
       tag.className = 'tag';
-      tag.innerHTML = num + ' <span class="tag-x" onclick="removeOrderTag(\'' + num + '\')">×</span>';
+      tag.innerHTML = item.orderNo + ' <span class="tag-x" onclick="removeOrderTag(\'' + item.orderNo + '\')">×</span>';
       wrap.insertBefore(tag, input);
     });
+    renderOrderCards();
   }
 
   window.removeOrderTag = function(num) { removeOrder(num); };
+
+  function renderOrderCards() {
+    var container = document.getElementById('orderCards');
+    container.innerHTML = '';
+    orders.forEach(function(item) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.style.marginBottom = '12px';
+      card.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
+          '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;color:var(--ink);">' + item.orderNo + '</div>' +
+        '</div>' +
+        '<label class="field-label" style="margin-top:0;">Net Weight (g)</label>' +
+        '<input class="field-input" type="number" inputmode="decimal" step="0.01" placeholder="e.g. 5.25" value="' + item.netWeight + '" data-field="netWeight" data-order="' + item.orderNo + '">' +
+        '<label class="field-label">Wastage (g)</label>' +
+        '<input class="field-input" type="number" inputmode="decimal" step="0.01" placeholder="0" value="' + item.wastage + '" data-field="wastage" data-order="' + item.orderNo + '">' +
+        '<label class="field-label" style="margin-top:16px;">HUID Image</label>' +
+        '<label class="file-upload" for="img_' + item.orderNo + '">📎 ' + (item.imageName || 'Tap to attach image') + '</label>' +
+        '<input type="file" id="img_' + item.orderNo + '" accept="image/*" data-order="' + item.orderNo + '" style="display:none">' +
+        '<label class="field-label" style="margin-top:16px;">Confirmations</label>' +
+        ['crossCheck','laserMarking','accountsChitti','orderComplete'].map(function(key) {
+          var labels = { crossCheck:'Cross-Check Item Detail confirmed', laserMarking:'Laser Marking done', accountsChitti:'Accounts Chitti confirmed', orderComplete:'Order Complete' };
+          var checked = item[key];
+          return '<div class="check-row' + (checked?' checked':'') + '" data-check="' + key + '" data-order="' + item.orderNo + '">' +
+            '<div class="check-box">' + (checked ? '✓' : '') + '</div>' +
+            '<div class="check-label">' + labels[key] + '</div>' +
+          '</div>';
+        }).join('');
+
+      // wire inputs
+      card.querySelectorAll('.field-input').forEach(function(inp) {
+        inp.addEventListener('input', function() {
+          var o = orders.find(function(x){ return x.orderNo === inp.dataset.order; });
+          if (o) o[inp.dataset.field] = inp.value;
+        });
+      });
+      // wire file
+      var fileInp = card.querySelector('input[type=file]');
+      fileInp.addEventListener('change', function() {
+        var o = orders.find(function(x){ return x.orderNo === fileInp.dataset.order; });
+        if (!o || !fileInp.files[0]) return;
+        var f = fileInp.files[0];
+        o.imageName = f.name;
+        o.imageMime = f.type;
+        var reader = new FileReader();
+        reader.onload = function(e) { o.imageBase64 = e.target.result.split(',')[1]; };
+        reader.readAsDataURL(f);
+        card.querySelector('.file-upload').textContent = '📎 ' + f.name;
+      });
+      // wire checkboxes
+      card.querySelectorAll('.check-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+          var o = orders.find(function(x){ return x.orderNo === row.dataset.order; });
+          if (!o) return;
+          var key = row.dataset.check;
+          o[key] = !o[key];
+          row.classList.toggle('checked', o[key]);
+          row.querySelector('.check-box').textContent = o[key] ? '✓' : '';
+        });
+      });
+
+      container.appendChild(card);
+    });
+
+    // Submit button at bottom
+    if (orders.length > 0) {
+      var btn = document.createElement('button');
+      btn.className = 'done-btn';
+      btn.id = 'doneBtn';
+      btn.style.marginBottom = '16px';
+      btn.textContent = '💎 Submit HUID Done (' + orders.length + ')';
+      btn.addEventListener('click', handleSubmit);
+      container.appendChild(btn);
+    }
+  }
 
   document.getElementById('tagInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -384,64 +423,40 @@
     .catch(function(err) { stopCamera(); showToast('Camera error: ' + (err.name || err.message), 'fail'); });
   });
 
-  // ── Checkboxes ──
-  window.toggleCheck = function(key) {
-    checks[key] = !checks[key];
-    var row = document.getElementById('row_' + key);
-    var box = document.getElementById('box_' + key);
-    if (checks[key]) { row.classList.add('checked'); box.textContent = '✓'; }
-    else             { row.classList.remove('checked'); box.textContent = ''; }
-  };
-
-  // ── File upload ──
-  window.showFileName = function(input) {
-    document.getElementById('fileName').textContent = input.files[0] ? '📎 ' + input.files[0].name : '';
-  };
-
-  function resetAll() {
+    function resetAll() {
     orders = [];
     renderTags();
-    document.getElementById('formSection').style.display = 'none';
-    document.getElementById('netWeight').value = '';
-    document.getElementById('wastage').value   = '0';
-    document.getElementById('huidImage').value = '';
-    document.getElementById('fileName').textContent = '';
-    Object.keys(checks).forEach(function(k) {
-      checks[k] = false;
-      document.getElementById('row_' + k).classList.remove('checked');
-      document.getElementById('box_' + k).textContent = '';
-    });
   }
 
   // ── Submit ──
-  document.getElementById('doneBtn').addEventListener('click', function() {
-    if (orders.length === 0) { showToast('Add at least one order', 'fail'); return; }
-    if (!checks.crossCheck)     { showToast('Confirm Cross-Check first', 'fail'); return; }
-    if (!checks.accountsChitti) { showToast('Confirm Accounts Chitti first', 'fail'); return; }
-    var netWeight = document.getElementById('netWeight').value;
-    if (!netWeight || parseFloat(netWeight) <= 0) { showToast('Enter net weight', 'fail'); return; }
+  function handleSubmit() {
+        if (orders.length === 0) { showToast('Add at least one order', 'fail'); return; }
     var u = getUser();
     if (!u) { document.getElementById('setupOverlay').style.display = 'flex'; return; }
+    for (var i = 0; i < orders.length; i++) {
+      var o = orders[i];
+      if (!o.netWeight || parseFloat(o.netWeight) <= 0) { showToast('Enter net weight for ' + o.orderNo, 'fail'); return; }
+      if (!o.crossCheck)     { showToast('Cross-Check not confirmed for ' + o.orderNo, 'fail'); return; }
+      if (!o.accountsChitti) { showToast('Accounts Chitti not confirmed for ' + o.orderNo, 'fail'); return; }
+    }
+    var doneBtn = document.getElementById('doneBtn');
+    if (doneBtn) { doneBtn.disabled = true; doneBtn.textContent = 'Submitting…'; }
 
-    var file = document.getElementById('huidImage').files[0];
-    document.getElementById('doneBtn').disabled = true;
-    document.getElementById('doneBtn').textContent = 'Submitting…';
-
-    function doSubmit(imageBase64, imageName, imageMime) {
-      var payload = orders.map(function(orderNo) {
+      function doSubmit() {
+      var payload = orders.map(function(item) {
         return {
           processes:      ['HUIDDone'],
-          orderNo:        orderNo,
+          orderNo:        item.orderNo,
           scannedBy:      u.name,
-          netWeight:      netWeight,
-          wastage:        document.getElementById('wastage').value || 0,
-          imageBase64:    imageBase64 || '',
-          imageName:      imageName   || '',
-          imageMime:      imageMime   || '',
-          crossCheck:     checks.crossCheck,
-          laserMarking:   checks.laserMarking,
-          accountsChitti: checks.accountsChitti,
-          orderComplete:  checks.orderComplete
+          netWeight:      item.netWeight,
+          wastage:        item.wastage || 0,
+          imageBase64:    item.imageBase64 || '',
+          imageName:      item.imageName   || '',
+          imageMime:      item.imageMime   || '',
+          crossCheck:     item.crossCheck,
+          laserMarking:   item.laserMarking,
+          accountsChitti: item.accountsChitti,
+          orderComplete:  item.orderComplete
         };
       });
 
@@ -451,33 +466,36 @@
         body: JSON.stringify(payload)
       })
       .then(function(r){ return r.json(); })
-      .then(function(res) {
-        document.getElementById('doneBtn').disabled = false;
-        document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
+            .then(function(res) {
+        var b = document.getElementById('doneBtn'); if(b){b.disabled=false;b.textContent='💎 Submit HUID Done ('+orders.length+')';}
         var allDone = res.results && res.results.every(function(r){ return r.status === 'done'; });
         if (allDone) {
-          showToast('💎 HUID Done — ' + orders.join(', '), 'success');
+          payload.forEach(function(item){ saveToQueue(item, 'synced'); });
+          showToast('💎 HUID Done — ' + payload.map(function(p){return p.orderNo;}).join(', '), 'success');
           resetAll();
         } else {
+          payload.forEach(function(item){ saveToQueue(item, 'error'); });
           var errors = (res.results || []).filter(function(r){ return r.status !== 'done'; });
           showToast('Error: ' + (errors[0] && errors[0].message || 'unknown'), 'fail');
         }
       })
-      .catch(function(e) {
-        document.getElementById('doneBtn').disabled = false;
-        document.getElementById('doneBtn').textContent = '💎 Submit HUID Done';
-        showToast('Error: ' + e.message, 'fail');
+      .catch(function() {
+        var b = document.getElementById('doneBtn'); if(b){b.disabled=false;b.textContent='💎 Submit HUID Done ('+orders.length+')';}
+        payload.forEach(function(item){ saveToQueue(item, 'pending'); });
+        showToast('Offline — saved locally', 'fail');
       });
     }
 
-    if (file) {
-      var reader = new FileReader();
-      reader.onload = function(e) { doSubmit(e.target.result.split(',')[1], file.name, file.type); };
-      reader.readAsDataURL(file);
-    } else {
-      doSubmit('', '', '');
-    }
-  });
+       doSubmit();
+  }
+  var QUEUE_KEY = 'huid_queue_v1';
+  function saveToQueue(item, syncStatus) {
+    try {
+      var q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+      q.push({ orderNo: item.orderNo, netWeight: item.netWeight, wastage: item.wastage, scannedBy: item.scannedBy, timestamp: new Date().toISOString(), syncStatus: syncStatus });
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+    } catch(e) {}
+  }
 })();
 </script>
 </body>
