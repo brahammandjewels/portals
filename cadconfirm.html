@@ -366,10 +366,15 @@
     qrViewport.style.display = 'block';
     qrStatus.textContent     = 'Starting camera…';
     if (!codeReader) codeReader = new ZXing.BrowserQRCodeReader();
+        var lastScanned = '';
+    var lastScannedAt = 0;
     codeReader.decodeFromVideoDevice(undefined, qrVideo, function(result, err) {
       if (result) {
         var num = result.getText().replace(/\D/g, '');
-        if (num) {
+        var now = Date.now();
+        if (num && (num !== lastScanned || now - lastScannedAt > 2000)) {
+          lastScanned = num;
+          lastScannedAt = now;
           if (navigator.vibrate) navigator.vibrate(60);
           handleLookup(num);
         }
