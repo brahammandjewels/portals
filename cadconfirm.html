@@ -255,8 +255,9 @@
     </div>
     <input class="order-input" type="number" id="orderInput"
            placeholder="Type order number…" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-    <button class="lookup-btn" id="lookupBtn">Look up &amp; add to list →</button>
-    <div class="tag-hint">Scan QR or type order number, then tap to add it to the batch below.</div>
+        <button class="lookup-btn" id="lookupBtn">Look up all →</button>
+        <div id="tagWrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;min-height:0;"></div>
+    <div class="tag-hint">Scan or type all order numbers first, then tap Look Up.</div>
   </div>
 
   <!-- ── BATCH LIST ── -->
@@ -297,7 +298,8 @@
   var DEVICE_KEY  = 'cad_device_id_v1';
 
   // batch = array of { orderNo, melting, companyName, cadStatus, weight }
-  var batch = [];
+    var batch = [];
+  var pendingNos = [];
 
   // ── Device ID ──────────────────────────────────────────────────────────────
   var deviceId = localStorage.getItem(DEVICE_KEY);
@@ -364,8 +366,7 @@
       if (result) {
         var num = result.getText().replace(/\D/g, '');
         if (num) {
-          stopCamera();
-          document.getElementById('orderInput').value = num;
+            stopCamera();
           if (navigator.vibrate) navigator.vibrate(60);
           handleLookup(num);
         }
@@ -385,48 +386,71 @@
   document.getElementById('orderInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); handleLookup(e.target.value.trim()); }
   });
-  document.getElementById('lookupBtn').addEventListener('click', function() {
-    handleLookup(document.getElementById('orderInput').value.trim());
-  });
+    document.getElementById('lookupBtn').addEventListener('click', lookupAll);
 
-  function handleLookup(orderNo) {
+    function handleLookup(orderNo) {
     orderNo = String(orderNo || '').trim();
     if (!orderNo) { showToast('Enter an order number first', 'fail'); return; }
-    var u = getUser();
-    if (!u) { document.getElementById('setupOverlay').style.display = 'flex'; return; }
-
-    // Duplicate check
-    if (batch.some(function(b){ return b.orderNo === orderNo; })) {
-      showToast('Order ' + orderNo + ' already in list', 'warn');
+    if (pendingNos.indexOf(orderNo) !== -1 || batch.some(function(b){ return b.orderNo === orderNo; })) {
+      showToast('Order ' + orderNo + ' already added', 'warn');
       document.getElementById('orderInput').value = '';
       return;
     }
+    pendingNos.push(orderNo);
+    renderTags();
+    document.getElementById('orderInput').value = '';
+    document.getElementById('orderInput').focus();
+    if (navigator.vibrate) navigator.vibrate(40);
+  }
 
-    var btn = document.getElementById('lookupBtn');
-    btn.innerHTML = '<span class="spinner"></span>';
-    btn.disabled = true;
-
-    var url = APPS_SCRIPT_URL + '?action=getOrder&orderNo=' + encodeURIComponent(orderNo);
-    fetch(url)
-      .then(function(r) { return r.json(); })
-      .then(function(json) {
-        btn.innerHTML = 'Look up &amp; add to list →';
-        btn.disabled = false;
-        if (json.status === 'found') {
-          addToBatch(json);
-          document.getElementById('orderInput').value = '';
-          document.getElementById('orderInput').focus();
-        } else if (json.status === 'not_found') {
-          showToast('Order ' + orderNo + ' not found in FMS', 'fail');
-        } else {
-          showToast('Error: ' + (json.message || 'unknown'), 'fail');
-        }
-      })
-      .catch(function() {
-        btn.innerHTML = 'Look up &amp; add to list →';
-        btn.disabled = false;
-        showToast('Cannot reach server — check connection', 'fail');
+  function renderTags() {
+    var wrap = document.getElementById('tagWrap');
+    wrap.innerHTML = '';
+    pendingNos.forEach(function(no) {
+      var tag = document.createElement('span');
+      tag.style.cssText = 'background:rgba(184,151,90,0.15);border:1px solid rgba(184,151,90,0.45);border-radius:20px;padding:6px 12px;font-size:14px;font-weight:600;color:#8C6F3E;display:flex;align-items:center;gap:6px;';
+      tag.innerHTML = no + '<span style="cursor:pointer;font-size:16px;color:#9A9A9A;" data-no="' + no + '">×</span>';
+      tag.querySelector('span').addEventListener('click', function(e) {
+        var n = e.target.dataset.no;
+        pendingNos = pendingNos.filter(function(x){ return x !== n; });
+        renderTags();
       });
+      wrap.appendChild(tag);
+    });
+  }
+
+  function lookupAll() {
+    if (pendingNos.length === 0) { showToast('Add order numbers first', 'fail'); return; }
+    var u = getUser();
+    if (!u) { document.getElementById('setupOverlay').style.display = 'flex'; return; }
+    var btn = document.getElementById('lookupBtn');
+    btn.innerHTML = '<span class="spinner"></span> Looking up…';
+    btn.disabled = true;
+    var toFetch = pendingNos.slice();
+    var done = 0;
+    toFetch.forEach(function(orderNo) {
+      var url = APPS_SCRIPT_URL + '?action=getOrder&orderNo=' + encodeURIComponent(orderNo);
+      fetch(url)
+        .then(function(r){ return r.json(); })
+        .then(function(json) {
+          if (json.status === 'found') {
+            batch.push({ orderNo: json.orderNo, weight: '' });
+            pendingNos = pendingNos.filter(function(x){ return x !== orderNo; });
+            renderTags();
+            renderBatch();
+          } else {
+            showToast('Order ' + orderNo + ' not found', 'fail');
+          }
+        })
+        .catch(function(){ showToast('Error looking up ' + orderNo, 'fail'); })
+        .finally(function() {
+          done++;
+          if (done === toFetch.length) {
+            btn.innerHTML = 'Look up all →';
+            btn.disabled = false;
+          }
+        });
+    });
   }
 
   // ── Batch management ───────────────────────────────────────────────────────
