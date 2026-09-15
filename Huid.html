@@ -318,7 +318,7 @@
         '<input class="field-input" type="number" inputmode="decimal" step="0.01" placeholder="0" value="' + item.wastage + '" data-field="wastage" data-order="' + item.orderNo + '">' +
         '<label class="field-label" style="margin-top:16px;">HUID Image</label>' +
         '<label class="file-upload" for="img_' + item.orderNo + '">📎 ' + (item.imageName || 'Tap to attach image') + '</label>' +
-        '<input type="file" id="img_' + item.orderNo + '" accept="image/*" data-order="' + item.orderNo + '" style="display:none">' +
+        '<input type="file" id="img_' + item.orderNo + '" accept="image/*" capture="environment" data-order="' + item.orderNo + '" style="display:none">' +
         '<label class="field-label" style="margin-top:16px;">Confirmations</label>' +
         ['crossCheck','laserMarking','accountsChitti','orderComplete'].map(function(key) {
           var labels = { crossCheck:'Cross-Check Item Detail confirmed', laserMarking:'Laser Marking done', accountsChitti:'Accounts Chitti confirmed', orderComplete:'Order Complete' };
@@ -339,16 +339,43 @@
       // wire file
       var fileInp = card.querySelector('input[type=file]');
       fileInp.addEventListener('change', function() {
-        var o = orders.find(function(x){ return x.orderNo === fileInp.dataset.order; });
-        if (!o || !fileInp.files[0]) return;
-        var f = fileInp.files[0];
-        o.imageName = f.name;
-        o.imageMime = f.type;
-        var reader = new FileReader();
-        reader.onload = function(e) { o.imageBase64 = e.target.result.split(',')[1]; };
-        reader.readAsDataURL(f);
-        card.querySelector('.file-upload').textContent = '📎 ' + f.name;
-      });
+  var o = orders.find(function(x){ return x.orderNo === fileInp.dataset.order; });
+  if (!o || !fileInp.files[0]) return;
+  var f = fileInp.files[0];
+  o.imageName = f.name;
+  o.imageMime = 'image/jpeg';
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      var now = new Date();
+      var dd = String(now.getDate()).padStart(2,'0');
+      var mm = String(now.getMonth()+1).padStart(2,'0');
+      var yyyy = now.getFullYear();
+      var hh = String(now.getHours()).padStart(2,'0');
+      var min = String(now.getMinutes()).padStart(2,'0');
+      var ss = String(now.getSeconds()).padStart(2,'0');
+      var stamp = dd+'/'+mm+'/'+yyyy+'  '+hh+':'+min+':'+ss+'  |  Brahammand Jewels';
+      var barH = Math.max(36, img.height * 0.06);
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillRect(0, img.height - barH, img.width, barH);
+      var fontSize = Math.max(14, Math.floor(barH * 0.5));
+      ctx.font = 'bold ' + fontSize + 'px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(stamp, 12, img.height - barH / 2);
+      o.imageBase64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+      card.querySelector('.file-upload').textContent = '📎 ' + f.name;
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(f);
+});
       // wire checkboxes
       card.querySelectorAll('.check-row').forEach(function(row) {
         row.addEventListener('click', function() {
@@ -403,10 +430,13 @@
     document.getElementById('qrViewport').style.display = 'block';
     document.getElementById('qrStatus').textContent     = 'Starting camera…';
     if (!codeReader) codeReader = new ZXing.BrowserQRCodeReader();
+    var lastScanned = '', lastScannedAt = 0;
     codeReader.decodeFromVideoDevice(undefined, document.getElementById('qrVideo'), function(result, err) {
       if (result) {
         var num = result.getText().replace(/\D/g, '');
-        if (num) {
+        var now = Date.now();
+        if (num && (num !== lastScanned || now - lastScannedAt > 3000)) {
+          lastScanned = num; lastScannedAt = now;
           if (navigator.vibrate) navigator.vibrate(60);
           document.getElementById('qrStatus').textContent = '✓ ' + num + ' added';
           addOrder(num);
