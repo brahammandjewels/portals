@@ -378,36 +378,38 @@
   // Sync
   var syncing = false;
   function trySync() {
-    if (!navigator.onLine || syncing) { updateNetStatus(); return; }
-    var pending = getQueue().filter(function(item){ return !item.synced; });
-    if (pending.length === 0) return;
-    syncing = true;
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(pending)
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(json) {
-      if (json.status === 'ok') {
-        var current = getQueue();
-        pending.forEach(function(item) {
-          var target = current.find(function(x){ return x.entryId === item.entryId; });
-          if (target) target.synced = true;
+  if (!navigator.onLine || syncing) { updateNetStatus(); return; }
+  var pending = getQueue().filter(function(item){ return !item.synced; });
+  if (pending.length === 0) return;
+
+  syncing = true;
+  var syncBtn = document.getElementById('syncBtn');
+  if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = 'Syncing…'; }
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'castingDone', items: pending })
+  })
+  .then(function(res){ return res.json(); })
+  .then(function(data){
+    if (data.success) {
+      var q = getQueue();
+      data.processed.forEach(function(castNo){
+        q.forEach(function(item){
+          if (String(item.castNo) === String(castNo)) item.synced = true;
         });
-        saveQueue(current);
-        if (json.results) {
-          json.results.forEach(function(r) {
-            if (r.status === 'already_done') {
-              showToast('⚠️ ' + r.orderNo + ' already marked Done', 'fail');
-            }
-          });
-        }
-      }
-    })
-    .catch(function(){})
-    .finally(function(){ syncing = false; });
-  }
+      });
+      saveQueue(q);
+      renderQueue();
+      showToast('✅ Synced');
+    }
+  })
+  .catch(function(){ showToast('❌ Sync failed, will retry'); })
+  .finally(function(){
+    syncing = false;
+    if (syncBtn) { syncBtn.disabled = false; syncBtn.textContent = 'Sync now'; }
+  });
+}
   document.getElementById('syncBtn').addEventListener('click', function(){ trySync(); showToast('Syncing…', 'success'); });
   window.addEventListener('online',  function(){ updateNetStatus(); trySync(); });
   window.addEventListener('offline', updateNetStatus);
