@@ -391,17 +391,22 @@
     body: JSON.stringify({ action: 'castingDone', items: pending })
   })
   .then(function(res){ return res.json(); })
-  .then(function(data){
-    if (data.success) {
+      .then(function(data){
+    if (data.status === 'ok') {
       var q = getQueue();
-      data.processed.forEach(function(castNo){
+      var alreadyCount = 0;
+      (data.results || []).forEach(function(r){
         q.forEach(function(item){
-          if (String(item.castNo) === String(castNo)) item.synced = true;
+          if (String(item.orderNo) === String(r.orderNo)) {
+            item.synced = true;
+            item.alreadyDone = (r.status === 'already_done');
+            if (item.alreadyDone) alreadyCount++;
+          }
         });
       });
       saveQueue(q);
-      renderQueue();
-      showToast('✅ Synced');
+      refreshStatus();
+      showToast(alreadyCount > 0 ? '⚠️ ' + alreadyCount + ' already marked' : '✅ Synced');
     }
   })
   .catch(function(){ showToast('❌ Sync failed, will retry'); })
@@ -426,8 +431,9 @@
   document.getElementById('viewLogLink').addEventListener('click', function() {
     var q = getQueue();
     if (q.length === 0) { alert('No entries on this device yet.'); return; }
-    alert(q.map(function(item){
-      return item.orderNo + ' — ' + (item.synced ? '✓ synced' : '⏳ pending');
+       alert(q.map(function(item){
+      var status = item.alreadyDone ? '⚠️ already marked' : (item.synced ? '✓ synced' : '⏳ pending');
+      return item.orderNo + ' — ' + status;
     }).join('\n'));
   });
 })();
