@@ -358,9 +358,10 @@
     if (orderNumbers.length === 0) { showToast('Enter at least one order number', 'fail'); return; }
     var q = getQueue();
     orderNumbers.forEach(function(orderNo) {
-      q.push({
+            q.push({
         entryId:   makeEntryId(u.code),
         scannedBy: u.name,
+        deviceId:  deviceId,
         orderNo:   orderNo,
         direction: 'IN',
         processes: ['CastingDone'],
