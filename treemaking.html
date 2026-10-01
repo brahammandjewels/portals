@@ -377,29 +377,41 @@
   });
 
   // Sync
-  var syncing = false;
+   var syncing = false;
   function trySync() {
     if (!navigator.onLine || syncing) { updateNetStatus(); return; }
     var pending = getQueue().filter(function(item){ return !item.synced; });
     if (pending.length === 0) return;
     syncing = true;
+    var syncBtn = document.getElementById('syncBtn');
+    if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = 'Syncing…'; }
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(pending)
     })
-    .then(function(res) {
-      if (res.ok) {
-        var current = getQueue();
-        pending.forEach(function(item) {
-          var target = current.find(function(x){ return x.entryId === item.entryId; });
-          if (target) target.synced = true;
+    .then(function(res){ return res.json(); })
+    .then(function(data){
+      if (data.status === 'ok') {
+        var q = getQueue();
+        (data.results || []).forEach(function(r){
+          q.forEach(function(item){
+            if (String(item.orderNo) === String(r.orderNo)) item.synced = true;
+          });
         });
-        saveQueue(current);
+        // Clean up old synced entries
+        var today = new Date().toDateString();
+        q = q.filter(function(item){
+          return !item.synced || new Date(item.timestamp).toDateString() === today;
+        });
+        saveQueue(q);
+        showToast('✅ Synced');
       }
     })
-    .catch(function(){})
-    .finally(function(){ syncing = false; });
+    .catch(function(){ showToast('❌ Sync failed, will retry', 'fail'); })
+    .finally(function(){
+      syncing = false;
+      if (syncBtn) { syncBtn.disabled = false; syncBtn.textContent = 'Sync now'; }
+    });
   }
   document.getElementById('syncBtn').addEventListener('click', function(){ trySync(); showToast('Syncing…', 'success'); });
   window.addEventListener('online',  function(){ updateNetStatus(); trySync(); });
