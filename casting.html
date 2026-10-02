@@ -335,11 +335,25 @@
   // Queue
   function getQueue() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch(e){ return []; } }
   function saveQueue(q) { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch(e){} refreshStatus(); }
+    
   function refreshStatus() {
     var q = getQueue();
-    var pending = q.filter(function(item){ return !item.synced; }).length;
-    document.getElementById('queueText').textContent = pending + ' pending';
-    document.getElementById('logCount').textContent = q.length;
+    var today = new Date().toDateString();
+    var pending     = q.filter(function(i){ return !i.synced; });
+    var todaySynced = q.filter(function(i){ return i.synced && !i.alreadyDone && new Date(i.timestamp).toDateString() === today; });
+    var todayDone   = q.filter(function(i){ return i.synced && i.alreadyDone && new Date(i.timestamp).toDateString() === today; });
+    document.getElementById('queueText').textContent = pending.length + ' pending';
+    var linkCount = todaySynced.length + todayDone.length + pending.length;
+    var viewLogLink = document.getElementById('viewLogLink');
+    if (viewLogLink) viewLogLink.innerHTML = 'View today\'s entries on this device (<span id="logCount">' + linkCount + '</span>)';
+    var syncBtn = document.getElementById('syncBtn');
+    if (syncBtn && !syncing) {
+      if (pending.length === 0) {
+        syncBtn.disabled = true; syncBtn.textContent = 'All synced ✓'; syncBtn.style.opacity = '0.5';
+      } else {
+        syncBtn.disabled = false; syncBtn.textContent = 'Sync now (' + pending.length + ')'; syncBtn.style.opacity = '1';
+      }
+    }
   }
 
   function showToast(msg, type) {
@@ -379,44 +393,51 @@
   // Sync
   var syncing = false;
   function trySync() {
-  if (!navigator.onLine || syncing) { updateNetStatus(); return; }
-  var pending = getQueue().filter(function(item){ return !item.synced; });
-  if (pending.length === 0) return;
-
-  syncing = true;
-  var syncBtn = document.getElementById('syncBtn');
-  if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = 'Syncing…'; }
-
-  fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-      body: JSON.stringify(pending)
-  })
-  .then(function(res){ return res.json(); })
-      .then(function(data){
-    if (data.status === 'ok') {
+    if (!navigator.onLine || syncing) { updateNetStatus(); return; }
+    var pending = getQueue().filter(function(i){ return !i.synced; });
+    if (pending.length === 0) return;
+    syncing = true;
+    var syncBtn = document.getElementById('syncBtn');
+    if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = 'Syncing…'; syncBtn.style.opacity = '1'; }
+    fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(pending) })
+    .then(function(res){ return res.json(); })
+    .then(function(data){
+      if (data.status !== 'ok') throw new Error('Server error');
+      var results = data.results || [];
       var q = getQueue();
-      var alreadyCount = 0;
-      (data.results || []).forEach(function(r){
+      var errors = [], alreadyCount = 0, syncedCount = 0;
+      results.forEach(function(r){
+        if (r.error) { errors.push(r.orderNo); return; }
         q.forEach(function(item){
-          if (String(item.orderNo) === String(r.orderNo)) {
+          if (String(item.orderNo) === String(r.orderNo) && !item.synced) {
             item.synced = true;
             item.alreadyDone = (r.status === 'already_done');
-            if (item.alreadyDone) alreadyCount++;
+            if (item.alreadyDone) alreadyCount++; else syncedCount++;
           }
         });
       });
+      var returnedOrders = results.map(function(r){ return String(r.orderNo); });
+      pending.forEach(function(p){
+        if (returnedOrders.indexOf(String(p.orderNo)) === -1) errors.push(p.orderNo);
+      });
+      var today = new Date().toDateString();
+      q = q.filter(function(item){ return !item.synced || new Date(item.timestamp).toDateString() === today; });
       saveQueue(q);
-      refreshStatus();
-      showToast(alreadyCount > 0 ? '⚠️ ' + alreadyCount + ' already marked' : '✅ Synced');
-    }
-  })
-  .catch(function(){ showToast('❌ Sync failed, will retry'); })
-  .finally(function(){
-    syncing = false;
-    if (syncBtn) { syncBtn.disabled = false; syncBtn.textContent = 'Sync now'; }
-  });
-}
-  document.getElementById('syncBtn').addEventListener('click', function(){ trySync(); showToast('Syncing…', 'success'); });
+      if (errors.length > 0 && syncedCount === 0 && alreadyCount === 0) {
+        showToast('❌ Failed: ' + errors.join(', '), 'fail');
+      } else if (errors.length > 0) {
+        showToast('⚠️ ' + syncedCount + ' synced · failed: ' + errors.join(', '), 'fail');
+      } else if (alreadyCount > 0) {
+        showToast('✅ Synced · ⚠️ ' + alreadyCount + ' already marked');
+      } else {
+        showToast('✅ ' + syncedCount + ' synced');
+      }
+    })
+    .catch(function(){ showToast('❌ Sync failed, will retry', 'fail'); })
+    .finally(function(){ syncing = false; refreshStatus(); });
+  }
+  document.getElementById('syncBtn').addEventListener('click', function(){ trySync(); });
+
   window.addEventListener('online',  function(){ updateNetStatus(); trySync(); });
   window.addEventListener('offline', updateNetStatus);
   function updateNetStatus() {
@@ -429,13 +450,41 @@
   updateNetStatus();
   refreshStatus();
 
-  document.getElementById('viewLogLink').addEventListener('click', function() {
+    document.getElementById('viewLogLink').addEventListener('click', function() {
     var q = getQueue();
-    if (q.length === 0) { alert('No entries on this device yet.'); return; }
-       alert(q.map(function(item){
-      var status = item.alreadyDone ? '⚠️ already marked' : (item.synced ? '✓ synced' : '⏳ pending');
-      return item.orderNo + ' — ' + status;
-    }).join('\n'));
+    var today = new Date().toDateString();
+    var pending     = q.filter(function(i){ return !i.synced; });
+    var todaySynced = q.filter(function(i){ return i.synced && !i.alreadyDone && new Date(i.timestamp).toDateString() === today; });
+    var todayDone   = q.filter(function(i){ return i.synced && i.alreadyDone && new Date(i.timestamp).toDateString() === today; });
+    function fmtTime(ts){ return new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+    function fmtDate(ts){ return new Date(ts).toLocaleDateString([],{day:'2-digit',month:'short'}); }
+    function rows(arr, isOldPending) {
+      if (arr.length === 0) return '<div style="color:#aaa;font-size:13px;padding:4px 0;">None</div>';
+      return arr.slice().reverse().map(function(i){
+        var isOld = isOldPending && new Date(i.timestamp).toDateString() !== today;
+        return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0ede6;">'
+          + '<span style="font-weight:600;">' + i.orderNo + (isOld ? ' <span style="font-size:11px;color:#bbb;font-weight:400;">(old)</span>' : '') + '</span>'
+          + '<span style="color:#aaa;font-size:12px;">' + (isOld ? fmtDate(i.timestamp) : fmtTime(i.timestamp)) + '</span>'
+          + '</div>';
+      }).join('');
+    }
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;';
+    overlay.innerHTML = '<div style="background:#fff;border-radius:20px;width:100%;max-width:420px;max-height:80vh;display:flex;flex-direction:column;padding:24px 20px;box-sizing:border-box;box-shadow:0 8px 32px rgba(0,0,0,0.18);">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">'
+      + '<b style="font-size:17px;">This device\'s entries</b>'
+      + '<span id="closeLog" style="font-size:24px;cursor:pointer;color:#aaa;line-height:1;">×</span></div>'
+      + '<div style="overflow-y:auto;flex:1;">'
+      + '<div style="font-weight:700;color:#e65c00;margin-bottom:6px;">🔄 Pending (' + pending.length + ')</div>'
+      + rows(pending, true)
+      + '<div style="font-weight:700;color:#2E6B4F;margin:16px 0 6px;">✅ Synced today (' + todaySynced.length + ')</div>'
+      + rows(todaySynced, false)
+      + '<div style="font-weight:700;color:#b8860b;margin:16px 0 6px;">⚠️ Already marked (' + todayDone.length + ')</div>'
+      + rows(todayDone, false)
+      + '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('#closeLog').onclick = function(){ document.body.removeChild(overlay); };
+    overlay.addEventListener('click', function(e){ if (e.target === overlay) document.body.removeChild(overlay); });
   });
 })();
 </script>
