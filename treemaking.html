@@ -396,7 +396,67 @@
     trySync();
   });
 
-  // Sync
+    function processSyncResults(results) {
+    var q = getQueue();
+    var errors = [], alreadyCount = 0, syncedCount = 0;
+    results.forEach(function(r){
+      if (r.error) { errors.push(r.orderNo); return; }
+      q.forEach(function(item){
+        if (String(item.orderNo) === String(r.orderNo) && !item.synced) {
+          item.synced = true;
+          item.alreadyDone = (r.status === 'already_done');
+          item.notFound = (r.status === 'not_found');
+          if (item.alreadyDone) alreadyCount++;
+          else if (item.notFound) errors.push(r.orderNo);
+          else syncedCount++;
+        }
+      });
+    });
+    var today = new Date().toDateString();
+    q = q.filter(function(item){ return !item.synced || new Date(item.timestamp).toDateString() === today; });
+    saveQueue(q);
+    if (errors.length > 0 && syncedCount === 0 && alreadyCount === 0) {
+      showToast('❌ Failed: ' + errors.join(', '), 'fail');
+    } else if (errors.length > 0) {
+      showToast('⚠️ ' + syncedCount + ' synced · failed: ' + errors.join(', '), 'fail');
+    } else if (alreadyCount > 0) {
+      showToast('✅ Synced · ⚠️ ' + alreadyCount + ' already marked');
+    } else {
+      showToast('✅ ' + syncedCount + ' synced');
+    }
+  }
+
+   // Sync
+  function processSyncResults(results, pending) {
+    var q = getQueue();
+    var errors = [], alreadyCount = 0, syncedCount = 0;
+    results.forEach(function(r){
+      if (r.error) { errors.push(r.orderNo); return; }
+      q.forEach(function(item){
+        if (String(item.orderNo) === String(r.orderNo) && !item.synced) {
+          item.synced = true;
+          item.alreadyDone = (r.status === 'already_done');
+          item.notFound = (r.status === 'not_found');
+          if (item.alreadyDone) alreadyCount++;
+          else if (item.notFound) errors.push(r.orderNo);
+          else syncedCount++;
+        }
+      });
+    });
+    var today = new Date().toDateString();
+    q = q.filter(function(item){ return !item.synced || new Date(item.timestamp).toDateString() === today; });
+    saveQueue(q);
+    if (errors.length > 0 && syncedCount === 0 && alreadyCount === 0) {
+      showToast('❌ Failed: ' + errors.join(', '), 'fail');
+    } else if (errors.length > 0) {
+      showToast('⚠️ ' + syncedCount + ' synced · failed: ' + errors.join(', '), 'fail');
+    } else if (alreadyCount > 0) {
+      showToast('✅ Synced · ⚠️ ' + alreadyCount + ' already marked');
+    } else {
+      showToast('✅ ' + syncedCount + ' synced');
+    }
+  }
+
   var syncing = false;
   function trySync() {
     if (!navigator.onLine || syncing) { updateNetStatus(); return; }
@@ -404,52 +464,37 @@
     if (pending.length === 0) return;
     syncing = true;
     var syncBtn = document.getElementById('syncBtn');
-    if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = 'Syncing…'; syncBtn.style.opacity = '1'; }
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(pending)
-    })
-    .then(function(res){ return res.json(); })
-    .then(function(data){
-      if (data.status !== 'ok') throw new Error('Server error');
-      var results = data.results || [];
-      var q = getQueue();
-      var errors = [], alreadyCount = 0, syncedCount = 0;
-      results.forEach(function(r){
-        if (r.error) { errors.push(r.orderNo); return; }
-        q.forEach(function(item){
-          if (String(item.orderNo) === String(r.orderNo) && !item.synced) {
-            item.synced = true;
-            item.alreadyDone = (r.status === 'already_done');
-            item.notFound = (r.status === 'not_found');
-            if (item.alreadyDone) alreadyCount++;
-            else if (item.notFound) errors.push(r.orderNo);
-            else syncedCount++;
-          }
-        });
-      });
-      var returnedOrders = results.map(function(r){ return String(r.orderNo); });
-      pending.forEach(function(p){
-        if (returnedOrders.indexOf(String(p.orderNo)) === -1) errors.push(p.orderNo);
-      });
-      var today = new Date().toDateString();
-      q = q.filter(function(item){ return !item.synced || new Date(item.timestamp).toDateString() === today; });
-      saveQueue(q);
-      if (errors.length > 0 && syncedCount === 0 && alreadyCount === 0) {
-        showToast('❌ Failed: ' + errors.join(', '), 'fail');
-      } else if (errors.length > 0) {
-        showToast('⚠️ ' + syncedCount + ' synced · failed: ' + errors.join(', '), 'fail');
-      } else if (alreadyCount > 0) {
-        showToast('✅ Synced · ⚠️ ' + alreadyCount + ' already marked');
-      } else {
-        showToast('✅ ' + syncedCount + ' synced');
+
+    var batchSize = 5;
+    var batches = [];
+    for (var b = 0; b < pending.length; b += batchSize) {
+      batches.push(pending.slice(b, b + batchSize));
+    }
+    var allResults = [];
+
+    function runBatch(index) {
+      if (index >= batches.length) {
+        processSyncResults(allResults, pending);
+        syncing = false;
+        refreshStatus();
+        return;
       }
-    })
-    .catch(function(){ showToast('❌ Sync failed, will retry', 'fail'); })
-    .finally(function(){
-      syncing = false;
-      refreshStatus();
-    });
+      var done = Math.min((index + 1) * batchSize, pending.length);
+      if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = 'Syncing ' + done + '/' + pending.length + '…'; syncBtn.style.opacity = '1'; }
+      fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(batches[index]) })
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if (data.results) allResults = allResults.concat(data.results);
+        runBatch(index + 1);
+      })
+      .catch(function(){
+        showToast('❌ Batch ' + (index + 1) + ' failed, will retry', 'fail');
+        syncing = false;
+        refreshStatus();
+      });
+    }
+
+    runBatch(0);
   }
   document.getElementById('syncBtn').addEventListener('click', function(){ trySync(); });
 
